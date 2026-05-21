@@ -190,53 +190,82 @@ function buildStatement(record: PayrollRecord) {
   const taxableAmount =
     paymentTotal - nonTaxableTransportationAllowance - socialInsuranceTotal;
 
+  const paymentItems = [
+    amountCell("基本給", record.base_salary),
+    amountCell("普通残業手当", record.overtime_pay),
+    amountCell("休日手当", holidayAllowance),
+    amountCell("深夜手当", lateNightAllowance),
+    amountCell("課税通勤手当", taxableTransportationAllowance),
+    amountCell("非課税通勤手当", nonTaxableTransportationAllowance),
+  ];
+  const deductionItems = [
+    amountCell("健康保険", record.health_insurance),
+    amountCell("介護保険", nursingCareInsurance),
+    amountCell("厚生年金", record.pension_insurance),
+    amountCell("雇用保険", record.employment_insurance),
+    amountCell("所得税", record.income_tax),
+    amountCell("住民税", record.resident_tax),
+    amountCell("子ども・子育て支援金", childCareSupport),
+    amountCell("その他控除", record.other_deductions),
+  ];
+
   return {
     attendanceCells: [
-      emptyCell(),
-      emptyCell(),
-      emptyCell(),
-      emptyCell(),
-      emptyCell(),
-      emptyCell(),
-      emptyCell(),
-      emptyCell(),
-      emptyCell(),
-      emptyCell(),
+      valueCell("出勤日数", null),
+      valueCell("休日出勤日数", null),
+      valueCell("有給日数", null),
+      valueCell("欠勤日数", null),
+      valueCell("遅刻・早退回数", null),
+      valueCell("所定労働時間", null),
+      valueCell("時間外労働時間", null),
+      valueCell("休日労働時間", null),
+      valueCell("深夜時間", null),
+      valueCell("遅刻・早退時間", null),
     ],
-    paymentCells: [
-      moneyCell("基本給", record.base_salary),
-      moneyCell("普通残業手当", record.overtime_pay),
-      moneyCell("休日手当", holidayAllowance),
-      moneyCell("深夜手当", lateNightAllowance),
-      moneyCell("課税通勤手当", taxableTransportationAllowance),
-      moneyCell("非課税通勤手当", nonTaxableTransportationAllowance),
-      moneyCell("支給額合計", paymentTotal, true),
-    ],
-    deductionCells: [
-      moneyCell("健康保険", record.health_insurance),
-      moneyCell("介護保険", nursingCareInsurance),
-      moneyCell("厚生年金", record.pension_insurance),
-      moneyCell("雇用保険", record.employment_insurance),
-      moneyCell("所得税", record.income_tax),
-      moneyCell("住民税", record.resident_tax),
-      moneyCell("子ども・子育て支援金", childCareSupport),
-      moneyCell("その他控除", record.other_deductions),
-      moneyCell("控除額合計", record.total_deductions, true),
-    ],
+    paymentCells: placeLastCellAtRowEnd(
+      paymentItems,
+      amountCell("支給額合計", paymentTotal, true),
+      5,
+    ),
+    deductionCells: placeLastCellAtRowEnd(
+      deductionItems,
+      amountCell("控除額合計", record.total_deductions, true),
+      5,
+    ),
     totalCells: [
-      moneyCell("社会保険合計", socialInsuranceTotal),
-      moneyCell("課税対象額", taxableAmount),
-      moneyCell("振込支給額", bankTransferPayment),
-      moneyCell("現金支給額", cashPayment),
+      amountCell("社会保険合計", socialInsuranceTotal),
+      amountCell("課税対象額", taxableAmount),
+      amountCell("振込支給額", bankTransferPayment),
+      amountCell("現金支給額", cashPayment),
     ],
   };
+}
+
+function placeLastCellAtRowEnd(
+  cells: StatementCell[],
+  lastCell: StatementCell,
+  rowSize: number,
+): StatementCell[] {
+  const arrangedCells = [...cells];
+  const nextPosition = arrangedCells.length % rowSize;
+
+  if (nextPosition !== rowSize - 1) {
+    const blanksNeeded = rowSize - 1 - nextPosition;
+
+    for (let index = 0; index < blanksNeeded; index += 1) {
+      arrangedCells.push(blankCell());
+    }
+  }
+
+  arrangedCells.push(lastCell);
+  return arrangedCells;
 }
 
 function chunkCells(cells: StatementCell[], size: number): StatementCell[][] {
   const paddedCells = [...cells];
 
   while (paddedCells.length % size !== 0) {
-    paddedCells.push(emptyCell());
+    paddedCells.push(blankCell());
   }
 
   const rows: StatementCell[][] = [];
@@ -248,25 +277,28 @@ function chunkCells(cells: StatementCell[], size: number): StatementCell[][] {
   return rows;
 }
 
-function emptyCell(): StatementCell {
+function blankCell(): StatementCell {
   return {
     label: "",
     value: "",
   };
 }
 
-function moneyCell(
+function valueCell(label: string, value: string | number | null): StatementCell {
+  return {
+    label,
+    value: value === null ? "" : String(value),
+  };
+}
+
+function amountCell(
   label: string,
   value: number | null,
   emphasis = false,
 ): StatementCell {
-  if (value === null) {
-    return emptyCell();
-  }
-
   return {
     label,
-    value: formatAmount(value),
+    value: value === null ? "" : formatAmount(value),
     emphasis,
   };
 }
