@@ -21,6 +21,14 @@ create table if not exists public.payroll_records (
   base_salary numeric(12, 2) not null default 0,
   overtime_pay numeric(12, 2) not null default 0,
   allowances numeric(12, 2) not null default 0,
+  transportation_expense numeric(12, 2) not null default 0,
+  health_insurance numeric(12, 2) not null default 0,
+  pension_insurance numeric(12, 2) not null default 0,
+  employment_insurance numeric(12, 2) not null default 0,
+  income_tax numeric(12, 2) not null default 0,
+  resident_tax numeric(12, 2) not null default 0,
+  other_deductions numeric(12, 2) not null default 0,
+  total_deductions numeric(12, 2) not null default 0,
   deductions numeric(12, 2) not null default 0,
   net_pay numeric(12, 2) not null default 0,
   pdf_storage_path text,
@@ -28,6 +36,16 @@ create table if not exists public.payroll_records (
   updated_at timestamptz not null default now(),
   unique (employee_id, payroll_month)
 );
+
+alter table public.payroll_records
+  add column if not exists transportation_expense numeric(12, 2) not null default 0,
+  add column if not exists health_insurance numeric(12, 2) not null default 0,
+  add column if not exists pension_insurance numeric(12, 2) not null default 0,
+  add column if not exists employment_insurance numeric(12, 2) not null default 0,
+  add column if not exists income_tax numeric(12, 2) not null default 0,
+  add column if not exists resident_tax numeric(12, 2) not null default 0,
+  add column if not exists other_deductions numeric(12, 2) not null default 0,
+  add column if not exists total_deductions numeric(12, 2) not null default 0;
 
 create table if not exists public.tax_documents (
   id uuid primary key default gen_random_uuid(),
