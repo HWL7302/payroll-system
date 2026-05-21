@@ -3,6 +3,7 @@
   --foreground: #172033;
   --muted: #667085;
   --line: #d9dee8;
+  --statement-line: #aeb8c6;
   --panel: #ffffff;
   --primary: #2563eb;
   --primary-dark: #1d4ed8;
@@ -20,10 +21,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family:
-    Arial,
-    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic UI",
     "Yu Gothic",
     Meiryo,
+    "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN",
+    Arial,
     sans-serif;
 }
 
@@ -339,6 +342,7 @@ th {
 .statement-meta span {
   color: var(--muted);
   font-size: 12px;
+  font-weight: 700;
 }
 
 .statement-meta strong {
@@ -410,13 +414,14 @@ th {
 .statement-total strong {
   color: var(--primary-dark);
   font-size: 32px;
+  font-weight: 700;
   line-height: 1.2;
 }
 
 .statement-table-section {
   display: grid;
   grid-template-columns: 96px 1fr;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--statement-line);
 }
 
 .statement-table-section h3 {
@@ -424,9 +429,10 @@ th {
   place-items: center;
   margin: 0;
   padding: 16px;
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--statement-line);
   background: #dbe9f4;
   font-size: 15px;
+  font-weight: 800;
   line-height: 1.8;
   writing-mode: vertical-rl;
   letter-spacing: 0;
@@ -445,8 +451,8 @@ th {
 .statement-label-cell,
 .statement-value-cell {
   min-height: 32px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--statement-line);
+  border-bottom: 1px solid var(--statement-line);
   padding: 6px 8px;
 }
 
@@ -456,6 +462,7 @@ th {
   justify-content: center;
   background: #dbe9f4;
   font-size: 13px;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -464,13 +471,13 @@ th {
   align-items: center;
   justify-content: flex-end;
   background: #ffffff;
-  font-weight: 700;
+  font-weight: 600;
   text-align: right;
 }
 
 .statement-value-cell.emphasis {
   color: var(--primary-dark);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 @media (max-width: 720px) {
@@ -527,7 +534,7 @@ th {
     display: block;
     padding: 10px 12px;
     border-right: 0;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--statement-line);
     writing-mode: horizontal-tb;
   }
 
