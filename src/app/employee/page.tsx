@@ -11,7 +11,7 @@ export default function EmployeePage() {
             従業員向けの仮トップページです。給与データ表示とPDFダウンロード処理はまだ実装していません。
           </p>
         </div>
-        <span className="status-pill">Phase 2</span>
+        <span className="status-pill">Phase 3</span>
       </div>
       <div className="grid">
         <section className="panel">
