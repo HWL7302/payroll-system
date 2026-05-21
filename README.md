@@ -15,12 +15,13 @@ Next.js + TypeScript + Supabase で作成した、給与閲覧システムです
 - 未ログイン状態での保護ページアクセス制御
 - Supabase 用 setup SQL
 - 従業員マスタの一覧表示と新規登録
+- 給与インポート用 `.xlsx` テンプレート
+- 管理者向け給与Excel取込
 - 基本レイアウト
 - 将来用の給与明細PDFダウンロードボタン
 
 ## 未実装
 
-- Excel 取込
 - 給与計算ロジック
 - PDFアップロード
 - PDFダウンロード本処理
@@ -36,7 +37,17 @@ Next.js + TypeScript + Supabase で作成した、給与閲覧システムです
 - `payroll_records`
 - `tax_documents`
 
-Phase 3 では `employees` の一覧表示と新規登録のみ画面実装しています。
+Phase 4 では `employees` の一覧表示と新規登録、および専用 `.xlsx` テンプレートからの `payroll_records` 登録を画面実装しています。
+
+## 給与Excel取込
+
+管理者でログイン後、`/admin/payroll-import` から操作します。
+
+使用するテンプレート:
+
+- `/payroll_import_template.xlsx`
+
+アップロード対象は `.xlsx` のみです。既存の給与計算Excelを直接読むのではなく、確定済み数値だけを専用テンプレートへ貼り付けて取り込みます。
 
 ## 環境変数
 
