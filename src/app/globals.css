@@ -413,6 +413,75 @@ th {
   line-height: 1.2;
 }
 
+.statement-table-layout {
+  display: grid;
+  gap: 0;
+}
+
+.statement-table-section {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  border-bottom: 1px solid var(--line);
+}
+
+.statement-table-section h3 {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 16px;
+  border-right: 1px solid var(--line);
+  background: #dbe9f4;
+  font-size: 15px;
+  line-height: 1.8;
+  writing-mode: vertical-rl;
+  letter-spacing: 0;
+}
+
+.statement-grid-table {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  background: var(--line);
+  gap: 1px;
+}
+
+.statement-grid-row {
+  min-height: 64px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: #ffffff;
+}
+
+.statement-grid-row span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 6px 8px;
+  background: #dbe9f4;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  text-align: center;
+}
+
+.statement-grid-row strong {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 10px;
+  font-size: 16px;
+  text-align: right;
+}
+
+.statement-grid-row.emphasis span {
+  background: #eef7ff;
+  font-weight: 700;
+}
+
+.statement-grid-row.emphasis strong {
+  color: var(--primary-dark);
+  font-weight: 800;
+}
+
 @media (max-width: 720px) {
   .topbar {
     height: auto;
@@ -457,5 +526,37 @@ th {
 
   .statement-total strong {
     font-size: 28px;
+  }
+
+  .statement-table-section {
+    grid-template-columns: 1fr;
+  }
+
+  .statement-table-section h3 {
+    display: block;
+    padding: 10px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    writing-mode: horizontal-tb;
+  }
+
+  .statement-grid-table {
+    grid-template-columns: 1fr;
+  }
+
+  .statement-grid-row {
+    min-height: 0;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto;
+  }
+
+  .statement-grid-row span {
+    justify-content: flex-start;
+    border-bottom: 0;
+    text-align: left;
+  }
+
+  .statement-grid-row strong {
+    min-width: 120px;
   }
 }
