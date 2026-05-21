@@ -23,6 +23,12 @@ export type PayrollRecord = {
   overtime_pay: number;
   allowances: number;
   transportation_expense: number;
+  health_insurance: number;
+  pension_insurance: number;
+  employment_insurance: number;
+  income_tax: number;
+  resident_tax: number;
+  other_deductions: number;
   total_deductions: number;
   net_pay: number;
   created_at: string;
