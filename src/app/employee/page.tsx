@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import type { Employee, PayrollRecord } from "@/lib/types";
 
-type StatementItem = {
+type StatementCell = {
   label: string;
   value: string;
   emphasis?: boolean;
@@ -114,15 +114,15 @@ function PayrollStatementCard({
       </header>
 
       <div className="statement-table-layout">
-        <StatementTableSection title="勤怠項目" items={statement.attendanceItems} />
-        <StatementTableSection title="支給項目" items={statement.paymentItems} />
-        <StatementTableSection title="控除項目" items={statement.deductionItems} />
-        <StatementTableSection title="合計" items={statement.totalItems} />
+        <StatementTableSection title="勤怠項目" cells={statement.attendanceCells} />
+        <StatementTableSection title="支給項目" cells={statement.paymentCells} />
+        <StatementTableSection title="控除項目" cells={statement.deductionCells} />
+        <StatementTableSection title="合計" cells={statement.totalCells} />
       </div>
 
       <footer className="statement-total">
         <span>差引支給額</span>
-        <strong>{formatCurrency(record.net_pay)}</strong>
+        <strong>{formatAmount(record.net_pay)}</strong>
       </footer>
     </article>
   );
@@ -130,22 +130,32 @@ function PayrollStatementCard({
 
 function StatementTableSection({
   title,
-  items,
+  cells,
 }: {
   title: string;
-  items: StatementItem[];
+  cells: StatementCell[];
 }) {
+  const rows = chunkCells(cells, 5);
+
   return (
     <section className="statement-table-section">
       <h3>{title}</h3>
       <div className="statement-grid-table">
-        {items.map((item) => (
-          <div
-            className={`statement-grid-row${item.emphasis ? " emphasis" : ""}`}
-            key={item.label}
-          >
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
+        {rows.map((row, rowIndex) => (
+          <div className="statement-item-row" key={`${title}-${rowIndex}`}>
+            {row.map((cell, cellIndex) => (
+              <div className="statement-label-cell" key={`label-${cellIndex}`}>
+                {cell.label}
+              </div>
+            ))}
+            {row.map((cell, cellIndex) => (
+              <div
+                className={`statement-value-cell${cell.emphasis ? " emphasis" : ""}`}
+                key={`value-${cellIndex}`}
+              >
+                {cell.value}
+              </div>
+            ))}
           </div>
         ))}
       </div>
@@ -154,86 +164,115 @@ function StatementTableSection({
 }
 
 function buildStatement(record: PayrollRecord) {
-  const taxableTransportationAllowance = 0;
+  const taxableTransportationAllowance: number | null = null;
   const nonTaxableTransportationAllowance = record.transportation_expense;
-  const holidayAllowance = 0;
-  const lateNightAllowance = 0;
-  const nursingCareInsurance = 0;
-  const childCareSupport = 0;
-  const cashPayment = 0;
+  const holidayAllowance: number | null = null;
+  const lateNightAllowance: number | null = null;
+  const nursingCareInsurance: number | null = null;
+  const childCareSupport: number | null = null;
+  const cashPayment: number | null = null;
   const bankTransferPayment = record.net_pay;
 
-  const paymentTotal =
-    record.base_salary +
-    record.overtime_pay +
-    holidayAllowance +
-    lateNightAllowance +
-    taxableTransportationAllowance +
-    nonTaxableTransportationAllowance;
-  const socialInsuranceTotal =
-    record.health_insurance +
-    record.pension_insurance +
-    record.employment_insurance +
-    nursingCareInsurance;
+  const paymentTotal = sumKnownAmounts([
+    record.base_salary,
+    record.overtime_pay,
+    holidayAllowance,
+    lateNightAllowance,
+    taxableTransportationAllowance,
+    nonTaxableTransportationAllowance,
+  ]);
+  const socialInsuranceTotal = sumKnownAmounts([
+    record.health_insurance,
+    record.pension_insurance,
+    record.employment_insurance,
+    nursingCareInsurance,
+  ]);
   const taxableAmount =
     paymentTotal - nonTaxableTransportationAllowance - socialInsuranceTotal;
 
   return {
-    attendanceItems: [
-      textItem("出勤日数", "0日"),
-      textItem("休日出勤日数", "0日"),
-      textItem("有給日数", "0日"),
-      textItem("欠勤日数", "0日"),
-      textItem("遅刻・早退回数", "0回"),
-      textItem("所定労働時間", "0:00"),
-      textItem("時間外労働時間", "0:00"),
-      textItem("休日労働時間", "0:00"),
-      textItem("深夜時間", "0:00"),
-      textItem("遅刻・早退時間", "0:00"),
+    attendanceCells: [
+      emptyCell(),
+      emptyCell(),
+      emptyCell(),
+      emptyCell(),
+      emptyCell(),
+      emptyCell(),
+      emptyCell(),
+      emptyCell(),
+      emptyCell(),
+      emptyCell(),
     ],
-    paymentItems: [
-      moneyItem("基本給", record.base_salary),
-      moneyItem("普通残業手当", record.overtime_pay),
-      moneyItem("休日手当", holidayAllowance),
-      moneyItem("深夜手当", lateNightAllowance),
-      moneyItem("課税通勤手当", taxableTransportationAllowance),
-      moneyItem("非課税通勤手当", nonTaxableTransportationAllowance),
-      moneyItem("支給額合計", paymentTotal, true),
+    paymentCells: [
+      moneyCell("基本給", record.base_salary),
+      moneyCell("普通残業手当", record.overtime_pay),
+      moneyCell("休日手当", holidayAllowance),
+      moneyCell("深夜手当", lateNightAllowance),
+      moneyCell("課税通勤手当", taxableTransportationAllowance),
+      moneyCell("非課税通勤手当", nonTaxableTransportationAllowance),
+      moneyCell("支給額合計", paymentTotal, true),
     ],
-    deductionItems: [
-      moneyItem("健康保険", record.health_insurance),
-      moneyItem("厚生年金", record.pension_insurance),
-      moneyItem("雇用保険", record.employment_insurance),
-      moneyItem("介護保険", nursingCareInsurance),
-      moneyItem("所得税", record.income_tax),
-      moneyItem("住民税", record.resident_tax),
-      moneyItem("子ども・子育て支援金", childCareSupport),
-      moneyItem("その他控除", record.other_deductions),
-      moneyItem("控除額合計", record.total_deductions, true),
+    deductionCells: [
+      moneyCell("健康保険", record.health_insurance),
+      moneyCell("介護保険", nursingCareInsurance),
+      moneyCell("厚生年金", record.pension_insurance),
+      moneyCell("雇用保険", record.employment_insurance),
+      moneyCell("所得税", record.income_tax),
+      moneyCell("住民税", record.resident_tax),
+      moneyCell("子ども・子育て支援金", childCareSupport),
+      moneyCell("その他控除", record.other_deductions),
+      moneyCell("控除額合計", record.total_deductions, true),
     ],
-    totalItems: [
-      moneyItem("社会保険合計", socialInsuranceTotal),
-      moneyItem("課税対象額", taxableAmount),
-      moneyItem("振込支給額", bankTransferPayment),
-      moneyItem("現金支給額", cashPayment),
-      moneyItem("差引支給額", record.net_pay, true),
+    totalCells: [
+      moneyCell("社会保険合計", socialInsuranceTotal),
+      moneyCell("課税対象額", taxableAmount),
+      moneyCell("振込支給額", bankTransferPayment),
+      moneyCell("現金支給額", cashPayment),
     ],
   };
 }
 
-function textItem(label: string, value: string): StatementItem {
+function chunkCells(cells: StatementCell[], size: number): StatementCell[][] {
+  const paddedCells = [...cells];
+
+  while (paddedCells.length % size !== 0) {
+    paddedCells.push(emptyCell());
+  }
+
+  const rows: StatementCell[][] = [];
+
+  for (let index = 0; index < paddedCells.length; index += size) {
+    rows.push(paddedCells.slice(index, index + size));
+  }
+
+  return rows;
+}
+
+function emptyCell(): StatementCell {
   return {
-    label,
-    value,
+    label: "",
+    value: "",
   };
 }
 
-function moneyItem(label: string, value: number, emphasis = false): StatementItem {
+function moneyCell(
+  label: string,
+  value: number | null,
+  emphasis = false,
+): StatementCell {
+  if (value === null) {
+    return emptyCell();
+  }
+
   return {
     label,
-    value: formatCurrency(value),
+    value: formatAmount(value),
     emphasis,
   };
+}
+
+function sumKnownAmounts(values: Array<number | null>): number {
+  return values.reduce<number>((total, value) => total + (value ?? 0), 0);
 }
 
 async function fetchPayrollRecords(
@@ -254,10 +293,8 @@ function formatPayrollMonth(value: string): string {
   return value.slice(0, 7);
 }
 
-function formatCurrency(value: number): string {
+function formatAmount(value: number): string {
   return new Intl.NumberFormat("ja-JP", {
-    style: "currency",
-    currency: "JPY",
     maximumFractionDigits: 0,
   }).format(value);
 }
