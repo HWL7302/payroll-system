@@ -8,10 +8,10 @@ export default function EmployeePage() {
           <p className="eyebrow">Employee</p>
           <h1>従業員トップページ</h1>
           <p className="lead">
-            自分の給与明細を確認するための画面です。Phase 1 では閲覧導線のみ配置しています。
+            従業員向けの仮トップページです。給与データ表示とPDFダウンロード処理はまだ実装していません。
           </p>
         </div>
-        <span className="status-pill">Phase 1</span>
+        <span className="status-pill">Phase 2</span>
       </div>
       <div className="grid">
         <section className="panel">

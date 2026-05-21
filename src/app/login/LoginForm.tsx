@@ -28,7 +28,7 @@ export function LoginForm() {
 
     setIsSubmitting(false);
 
-    if (signInError) {
+    if (signInError || !data.user) {
       setError("メールアドレスまたはパスワードが正しくありません。");
       return;
     }

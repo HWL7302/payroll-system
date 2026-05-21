@@ -1,16 +1,18 @@
-# 給与閲覧システム Phase 1
+# 給与閲覧システム
 
-Next.js + TypeScript + Supabase で作成した、給与閲覧システムの最小構成です。
+Next.js + TypeScript + Supabase で作成した、給与閲覧システムです。
 
 ## 実装済み
 
 - Next.js App Router
 - TypeScript
 - Supabase クライアント設定
-- ログイン画面
-- ログイン後の権限分岐
+- Supabase Auth のメールアドレス＋パスワードログイン
+- ログイン後の role による遷移先分岐
   - `role: "admin"` は管理者トップページ
   - それ以外は従業員トップページ
+- ログアウト
+- 未ログイン状態での保護ページアクセス制御
 - 基本レイアウト
 - 将来用の給与明細PDFダウンロードボタン
 
