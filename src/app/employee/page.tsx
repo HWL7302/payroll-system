@@ -121,7 +121,7 @@ function PayrollStatementCard({
       </div>
 
       <footer className="statement-total">
-        <span>差引支給額</span>
+        <span>振込支給額</span>
         <strong>{formatAmount(record.net_pay)}</strong>
       </footer>
     </article>
@@ -170,8 +170,6 @@ function buildStatement(record: PayrollRecord) {
   const lateNightAllowance: number | null = null;
   const nursingCareInsurance: number | null = null;
   const childCareSupport: number | null = null;
-  const cashPayment: number | null = null;
-  const bankTransferPayment = record.net_pay;
 
   const paymentTotal = sumKnownAmounts([
     record.base_salary,
@@ -235,8 +233,9 @@ function buildStatement(record: PayrollRecord) {
     totalCells: [
       amountCell("社会保険合計", socialInsuranceTotal),
       amountCell("課税対象額", taxableAmount),
-      amountCell("振込支給額", bankTransferPayment),
-      amountCell("現金支給額", cashPayment),
+      blankCell(),
+      blankCell(),
+      amountCell("差引支給額", record.net_pay, true),
     ],
   };
 }
