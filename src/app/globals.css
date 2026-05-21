@@ -182,6 +182,16 @@ h2 {
   font-weight: 700;
 }
 
+.status-pill.warning {
+  color: #b54708;
+  background: #fff7e6;
+}
+
+.status-pill.danger {
+  color: #b42318;
+  background: #fff1f0;
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;
@@ -259,6 +269,13 @@ h2 {
   color: #027a48;
   background: var(--success-bg);
   font-size: 14px;
+}
+
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
 }
 
 .table-wrap {
