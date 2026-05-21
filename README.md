@@ -13,6 +13,8 @@ Next.js + TypeScript + Supabase で作成した、給与閲覧システムです
   - それ以外は従業員トップページ
 - ログアウト
 - 未ログイン状態での保護ページアクセス制御
+- Supabase 用 setup SQL
+- 従業員マスタの一覧表示と新規登録
 - 基本レイアウト
 - 将来用の給与明細PDFダウンロードボタン
 
@@ -23,6 +25,18 @@ Next.js + TypeScript + Supabase で作成した、給与閲覧システムです
 - PDFアップロード
 - PDFダウンロード本処理
 - メール通知
+
+## Supabase DB セットアップ
+
+`supabase/setup.sql` を Supabase SQL Editor で実行してください。
+
+作成されるテーブル:
+
+- `employees`
+- `payroll_records`
+- `tax_documents`
+
+Phase 3 では `employees` の一覧表示と新規登録のみ画面実装しています。
 
 ## 環境変数
 
