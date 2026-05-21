@@ -14,3 +14,17 @@ export type Employee = {
   created_at: string;
   updated_at: string;
 };
+
+export type PayrollRecord = {
+  id: string;
+  employee_id: string;
+  payroll_month: string;
+  base_salary: number;
+  overtime_pay: number;
+  allowances: number;
+  transportation_expense: number;
+  total_deductions: number;
+  net_pay: number;
+  created_at: string;
+  updated_at: string;
+};
