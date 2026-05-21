@@ -3,6 +3,12 @@ import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import type { Employee, PayrollRecord } from "@/lib/types";
 
+type StatementItem = {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+};
+
 export default async function EmployeePage() {
   const supabase = await createClient();
   const {
@@ -78,22 +84,7 @@ function PayrollStatementCard({
   employee: Employee;
   record: PayrollRecord;
 }) {
-  const paymentItems = [
-    ["基本給", record.base_salary],
-    ["残業代", record.overtime_pay],
-    ["各種手当", record.allowances],
-    ["交通費", record.transportation_expense],
-  ] as const;
-
-  const deductionItems = [
-    ["健康保険", record.health_insurance],
-    ["厚生年金", record.pension_insurance],
-    ["雇用保険", record.employment_insurance],
-    ["所得税", record.income_tax],
-    ["住民税", record.resident_tax],
-    ["その他控除", record.other_deductions],
-    ["控除合計", record.total_deductions],
-  ] as const;
+  const statement = buildStatement(record);
 
   return (
     <article className="payroll-statement">
@@ -122,9 +113,11 @@ function PayrollStatementCard({
         </div>
       </header>
 
-      <div className="statement-sections">
-        <StatementSection title="支給" items={paymentItems} />
-        <StatementSection title="控除" items={deductionItems} />
+      <div className="statement-table-layout">
+        <StatementTableSection title="勤怠項目" items={statement.attendanceItems} />
+        <StatementTableSection title="支給項目" items={statement.paymentItems} />
+        <StatementTableSection title="控除項目" items={statement.deductionItems} />
+        <StatementTableSection title="合計" items={statement.totalItems} />
       </div>
 
       <footer className="statement-total">
@@ -135,26 +128,112 @@ function PayrollStatementCard({
   );
 }
 
-function StatementSection({
+function StatementTableSection({
   title,
   items,
 }: {
   title: string;
-  items: readonly (readonly [string, number])[];
+  items: StatementItem[];
 }) {
   return (
-    <section className="statement-section">
+    <section className="statement-table-section">
       <h3>{title}</h3>
-      <dl>
-        {items.map(([label, value]) => (
-          <div key={label} className="statement-line">
-            <dt>{label}</dt>
-            <dd>{formatCurrency(value)}</dd>
+      <div className="statement-grid-table">
+        {items.map((item) => (
+          <div
+            className={`statement-grid-row${item.emphasis ? " emphasis" : ""}`}
+            key={item.label}
+          >
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
           </div>
         ))}
-      </dl>
+      </div>
     </section>
   );
+}
+
+function buildStatement(record: PayrollRecord) {
+  const taxableTransportationAllowance = 0;
+  const nonTaxableTransportationAllowance = record.transportation_expense;
+  const holidayAllowance = 0;
+  const lateNightAllowance = 0;
+  const nursingCareInsurance = 0;
+  const childCareSupport = 0;
+  const cashPayment = 0;
+  const bankTransferPayment = record.net_pay;
+
+  const paymentTotal =
+    record.base_salary +
+    record.overtime_pay +
+    holidayAllowance +
+    lateNightAllowance +
+    taxableTransportationAllowance +
+    nonTaxableTransportationAllowance;
+  const socialInsuranceTotal =
+    record.health_insurance +
+    record.pension_insurance +
+    record.employment_insurance +
+    nursingCareInsurance;
+  const taxableAmount =
+    paymentTotal - nonTaxableTransportationAllowance - socialInsuranceTotal;
+
+  return {
+    attendanceItems: [
+      textItem("出勤日数", "0日"),
+      textItem("休日出勤日数", "0日"),
+      textItem("有給日数", "0日"),
+      textItem("欠勤日数", "0日"),
+      textItem("遅刻・早退回数", "0回"),
+      textItem("所定労働時間", "0:00"),
+      textItem("時間外労働時間", "0:00"),
+      textItem("休日労働時間", "0:00"),
+      textItem("深夜時間", "0:00"),
+      textItem("遅刻・早退時間", "0:00"),
+    ],
+    paymentItems: [
+      moneyItem("基本給", record.base_salary),
+      moneyItem("普通残業手当", record.overtime_pay),
+      moneyItem("休日手当", holidayAllowance),
+      moneyItem("深夜手当", lateNightAllowance),
+      moneyItem("課税通勤手当", taxableTransportationAllowance),
+      moneyItem("非課税通勤手当", nonTaxableTransportationAllowance),
+      moneyItem("支給額合計", paymentTotal, true),
+    ],
+    deductionItems: [
+      moneyItem("健康保険", record.health_insurance),
+      moneyItem("厚生年金", record.pension_insurance),
+      moneyItem("雇用保険", record.employment_insurance),
+      moneyItem("介護保険", nursingCareInsurance),
+      moneyItem("所得税", record.income_tax),
+      moneyItem("住民税", record.resident_tax),
+      moneyItem("子ども・子育て支援金", childCareSupport),
+      moneyItem("その他控除", record.other_deductions),
+      moneyItem("控除額合計", record.total_deductions, true),
+    ],
+    totalItems: [
+      moneyItem("社会保険合計", socialInsuranceTotal),
+      moneyItem("課税対象額", taxableAmount),
+      moneyItem("振込支給額", bankTransferPayment),
+      moneyItem("現金支給額", cashPayment),
+      moneyItem("差引支給額", record.net_pay, true),
+    ],
+  };
+}
+
+function textItem(label: string, value: string): StatementItem {
+  return {
+    label,
+    value,
+  };
+}
+
+function moneyItem(label: string, value: number, emphasis = false): StatementItem {
+  return {
+    label,
+    value: formatCurrency(value),
+    emphasis,
+  };
 }
 
 async function fetchPayrollRecords(
