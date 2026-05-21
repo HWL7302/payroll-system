@@ -304,6 +304,115 @@ th {
   background: #f8fafc;
 }
 
+.payroll-statement {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.statement-header {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: 24px;
+  padding: 24px;
+  border-bottom: 1px solid var(--line);
+  background: #f8fafc;
+}
+
+.statement-header h2 {
+  margin-bottom: 0;
+  font-size: 24px;
+}
+
+.statement-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.statement-meta div {
+  display: grid;
+  gap: 4px;
+}
+
+.statement-meta span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.statement-meta strong {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.statement-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line);
+}
+
+.statement-section {
+  padding: 24px;
+}
+
+.statement-section + .statement-section {
+  border-left: 1px solid var(--line);
+}
+
+.statement-section h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+.statement-section dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.statement-line {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eef2f8;
+}
+
+.statement-line:last-child {
+  border-bottom: 0;
+}
+
+.statement-line dt {
+  color: var(--muted);
+}
+
+.statement-line dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.statement-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  background: #f7fbff;
+}
+
+.statement-total span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.statement-total strong {
+  color: var(--primary-dark);
+  font-size: 32px;
+  line-height: 1.2;
+}
+
 @media (max-width: 720px) {
   .topbar {
     height: auto;
@@ -322,5 +431,31 @@ th {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .statement-header {
+    grid-template-columns: 1fr;
+  }
+
+  .statement-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .statement-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .statement-section + .statement-section {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .statement-total {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .statement-total strong {
+    font-size: 28px;
   }
 }
