@@ -8,10 +8,10 @@ export default function AdminPage() {
           <p className="eyebrow">Admin</p>
           <h1>管理者トップページ</h1>
           <p className="lead">
-            管理者向けの仮トップページです。給与データ表示、Excel取込、PDFアップロードはまだ実装していません。
+            管理者向けのトップページです。給与計算、PDFアップロード、源泉徴収票はまだ実装していません。
           </p>
         </div>
-        <span className="status-pill">Phase 3</span>
+        <span className="status-pill">Phase 4</span>
       </div>
       <div className="grid">
         <section className="panel">
@@ -22,11 +22,11 @@ export default function AdminPage() {
           </a>
         </section>
         <section className="panel">
-          <h2>給与明細PDF</h2>
-          <p>PDFアップロードとダウンロード処理は次フェーズ以降で実装します。</p>
-          <button className="button" type="button" disabled>
-            PDFダウンロード
-          </button>
+          <h2>給与Excel取込</h2>
+          <p>専用テンプレートの .xlsx から確定済みの給与数値を取り込みます。</p>
+          <a className="button" href="/admin/payroll-import">
+            給与Excel取込へ
+          </a>
         </section>
       </div>
     </AppShell>
