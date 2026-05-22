@@ -159,7 +159,7 @@ export async function importPayrollWorkbook(
       late_early_hours: row.lateEarlyHours,
       base_salary: row.baseSalary,
       overtime_pay: row.overtimePay,
-      allowances: 0,
+      allowances: null,
       holiday_pay: row.holidayPay,
       late_night_pay: row.lateNightPay,
       taxable_transportation_allowance: row.taxableTransportationAllowance,
