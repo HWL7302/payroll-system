@@ -438,6 +438,10 @@ th {
   margin-top: calc(var(--statement-section-line-width) * -1);
 }
 
+.statement-table-layout > .statement-table-section:first-child {
+  border-top-width: 1px;
+}
+
 .statement-table-section h3 {
   display: grid;
   place-items: center;
@@ -485,6 +489,7 @@ th {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-bottom: 0;
   background: #dbe9f4;
   font-size: 13px;
   font-weight: 700;
@@ -542,7 +547,7 @@ th {
   font-weight: 700;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720ppx) {
   .topbar {
     height: auto;
     align-items: flex-start;
