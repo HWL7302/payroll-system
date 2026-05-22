@@ -142,8 +142,11 @@ export async function importPayrollWorkbook(
       : row;
   });
 
-  const insertRows = rows
-    .filter((row) => row.status === "ready" && row.employeeId)
+  const upsertRows = rows
+    .filter(
+      (row) =>
+        (row.status === "ready" || row.status === "duplicate") && row.employeeId,
+    )
     .map((row) => ({
       employee_id: row.employeeId!,
       payroll_month: row.payrollMonth,
@@ -182,8 +185,10 @@ export async function importPayrollWorkbook(
       net_pay: row.netPay,
     }));
 
-  if (insertRows.length > 0) {
-    const { error: insertError } = await supabase.from("payroll_records").insert(insertRows);
+  if (upsertRows.length > 0) {
+    const { error: insertError } = await supabase
+      .from("payroll_records")
+      .upsert(upsertRows, { onConflict: "employee_id,payroll_month" });
 
     if (insertError) {
       return {
