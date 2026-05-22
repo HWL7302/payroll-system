@@ -309,7 +309,7 @@ th {
 
 .payroll-statement {
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--statement-line);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -319,7 +319,7 @@ th {
   grid-template-columns: minmax(180px, 240px) 1fr;
   gap: 24px;
   padding: 24px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--statement-line);
   background: #f8fafc;
 }
 
@@ -403,7 +403,7 @@ th {
   justify-content: space-between;
   gap: 16px;
   padding: 24px;
-  color: var(--foreground);
+  border-top: 1px solid var(--statement-line);
   background: #f7fbff;
 }
 
@@ -437,7 +437,8 @@ th {
   font-weight: 800;
   line-height: 1.8;
   writing-mode: vertical-rl;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
 }
 
 .statement-grid-table {
@@ -478,6 +479,43 @@ th {
 }
 
 .statement-value-cell.emphasis {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.statement-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.statement-filter h2 {
+  margin-bottom: 0;
+}
+
+.statement-month-field {
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.statement-month-field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.statement-month-field select {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 12px;
+  background: #ffffff;
   color: var(--foreground);
   font-weight: 700;
 }
@@ -524,8 +562,13 @@ th {
     flex-direction: column;
   }
 
-  .statement-total span {
-    font-size: 20px;
+  .statement-filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .statement-month-field {
+    min-width: 0;
   }
 
   .statement-total strong {
@@ -542,7 +585,8 @@ th {
     border-right: 0;
     border-bottom: 1px solid var(--statement-line);
     writing-mode: horizontal-tb;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.12em;
+    text-indent: 0;
   }
 
   .statement-grid-table {
