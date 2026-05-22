@@ -119,8 +119,8 @@ function formatStatus(status: PayrollImportState["rows"][number]["status"]): str
   return labels[status];
 }
 
-function formatNumber(value: number): string {
-  if (value === 0) {
+function formatNumber(value: number | null): string {
+  if (value === null || value === 0) {
     return "";
   }
 
