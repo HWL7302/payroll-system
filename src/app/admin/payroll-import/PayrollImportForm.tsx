@@ -21,7 +21,9 @@ export function PayrollImportForm() {
     <div className="stack">
       <section className="panel">
         <h2>テンプレート</h2>
-        <p>専用テンプレートに確定済みの給与数値を貼り付けてアップロードしてください。</p>
+        <p>
+          専用テンプレートに確定済みの給与明細数値を貼り付けてアップロードしてください。
+        </p>
         <a className="button secondary" href="/payroll_import_template.xlsx" download>
           テンプレートをダウンロード
         </a>
@@ -60,11 +62,17 @@ export function PayrollImportForm() {
                   <th>氏名</th>
                   <th>対象年月</th>
                   <th>基本給</th>
-                  <th>残業代</th>
-                  <th>各種手当</th>
-                  <th>交通費</th>
-                  <th>控除合計</th>
+                  <th>普通残業手当</th>
+                  <th>非課税通勤手当</th>
+                  <th>健康保険</th>
+                  <th>厚生年金</th>
+                  <th>雇用保険</th>
+                  <th>その他控除</th>
+                  <th>所得税</th>
+                  <th>住民税</th>
+                  <th>控除額合計</th>
                   <th>差引支給額</th>
+                  <th>振込支給額</th>
                   <th>メッセージ</th>
                 </tr>
               </thead>
@@ -78,10 +86,16 @@ export function PayrollImportForm() {
                     <td>{row.payrollMonth}</td>
                     <td>{formatNumber(row.baseSalary)}</td>
                     <td>{formatNumber(row.overtimePay)}</td>
-                    <td>{formatNumber(row.allowances)}</td>
-                    <td>{formatNumber(row.transportationExpense)}</td>
+                    <td>{formatNumber(row.nonTaxableTransportationAllowance)}</td>
+                    <td>{formatNumber(row.healthInsurance)}</td>
+                    <td>{formatNumber(row.pensionInsurance)}</td>
+                    <td>{formatNumber(row.employmentInsurance)}</td>
+                    <td>{formatNumber(row.otherDeductions)}</td>
+                    <td>{formatNumber(row.incomeTax)}</td>
+                    <td>{formatNumber(row.residentTax)}</td>
                     <td>{formatNumber(row.totalDeductions)}</td>
                     <td>{formatNumber(row.netPay)}</td>
+                    <td>{formatNumber(row.bankTransferAmount)}</td>
                     <td>{row.errors.join(" / ") || "-"}</td>
                   </tr>
                 ))}
@@ -106,5 +120,9 @@ function formatStatus(status: PayrollImportState["rows"][number]["status"]): str
 }
 
 function formatNumber(value: number): string {
+  if (value === 0) {
+    return "";
+  }
+
   return new Intl.NumberFormat("ja-JP").format(value);
 }
