@@ -134,6 +134,11 @@ function PayrollStatementCard({
             <strong>{formatPayrollMonthLabel(record.payroll_month)}</strong>
           </div>
         </div>
+        <div className="statement-download">
+          <button className="button secondary" type="button">
+            給与明細ダウンロード
+          </button>
+        </div>
       </header>
 
       <div className="statement-table-layout">

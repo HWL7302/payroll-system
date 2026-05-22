@@ -147,7 +147,11 @@ function readZipEntries(buffer: Buffer): Map<string, ZipEntry> {
     const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
     const data = method === 0 ? compressed : inflateRawSync(compressed);
 
-    entries.set(name, { name, data });
+    entries.set(name, {
+      name,
+      data,
+    });
+
     cursor += 46 + fileNameLength + extraLength + commentLength;
   }
 
@@ -221,7 +225,10 @@ function readCellValue(
 }
 
 function validateHeaders(headerRow: CellValue[]): string[] {
-  const headers = payrollImportHeaders.map((header, index) => normalizeText(headerRow[index]));
+  const headers = payrollImportHeaders.map((header, index) => {
+    return normalizeText(headerRow[index]);
+  });
+
   const missing = payrollImportHeaders.filter((header, index) => headers[index] !== header);
 
   return missing.length > 0
@@ -290,14 +297,20 @@ function parseOptionalNumber(
   label: string,
   errors: string[],
 ): PayrollImportNumber {
-  if (value === null || value === "") {
+  if (value === null) {
+    return null;
+  }
+
+  const textValue = typeof value === "number" ? null : String(value).replaceAll(",", "").trim();
+
+  if (textValue === "") {
     return null;
   }
 
   const normalized =
     typeof value === "number"
       ? value
-      : Number(String(value).replaceAll(",", "").trim());
+      : Number(textValue);
 
   if (!Number.isFinite(normalized)) {
     errors.push(`${label}が数値ではありません。`);
