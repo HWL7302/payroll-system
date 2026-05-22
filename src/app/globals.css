@@ -3,7 +3,7 @@
   --foreground: #172033;
   --muted: #667085;
   --line: #d9dee8;
-  --statement-line: #aeb8c6;
+  --statement-line: #4b5563;
   --panel: #ffffff;
   --primary: #2563eb;
   --primary-dark: #1d4ed8;
@@ -310,7 +310,7 @@ th {
 .payroll-statement {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -403,16 +403,18 @@ th {
   justify-content: space-between;
   gap: 16px;
   padding: 24px;
+  color: var(--foreground);
   background: #f7fbff;
 }
 
 .statement-total span {
-  color: var(--muted);
+  color: var(--foreground);
+  font-size: 24px;
   font-weight: 700;
 }
 
 .statement-total strong {
-  color: var(--primary-dark);
+  color: var(--foreground);
   font-size: 32px;
   font-weight: 700;
   line-height: 1.2;
@@ -435,7 +437,7 @@ th {
   font-weight: 800;
   line-height: 1.8;
   writing-mode: vertical-rl;
-  letter-spacing: 0;
+  letter-spacing: 0.08em;
 }
 
 .statement-grid-table {
@@ -476,7 +478,7 @@ th {
 }
 
 .statement-value-cell.emphasis {
-  color: var(--primary-dark);
+  color: var(--foreground);
   font-weight: 700;
 }
 
@@ -522,6 +524,10 @@ th {
     flex-direction: column;
   }
 
+  .statement-total span {
+    font-size: 20px;
+  }
+
   .statement-total strong {
     font-size: 28px;
   }
@@ -536,6 +542,7 @@ th {
     border-right: 0;
     border-bottom: 1px solid var(--statement-line);
     writing-mode: horizontal-tb;
+    letter-spacing: 0.04em;
   }
 
   .statement-grid-table {
