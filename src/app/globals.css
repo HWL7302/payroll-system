@@ -547,7 +547,7 @@ th {
   font-weight: 700;
 }
 
-@media (max-width: 720ppx) {
+@media (max-width: 720px) {
   .topbar {
     height: auto;
     align-items: flex-start;
