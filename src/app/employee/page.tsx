@@ -211,7 +211,9 @@ function buildStatement(record: PayrollRecord) {
     socialInsuranceTotalFallback,
   );
   const taxableAmountFallback =
-    paymentTotal - nonTaxableTransportationAllowance - socialInsuranceTotal;
+    valueForCalculation(paymentTotal) -
+    valueForCalculation(nonTaxableTransportationAllowance) -
+    valueForCalculation(socialInsuranceTotal);
   const taxableAmount = nonZeroOrFallback(record.taxable_amount, taxableAmountFallback);
 
   const paymentItems = [
@@ -354,9 +356,9 @@ function amountCell(
 
 function nonZeroOrFallback(
   value: number | null | undefined,
-  fallback: number,
-): number {
-  return value === null || value === undefined || value === 0 ? fallback : value;
+  fallback: number | null | undefined,
+): number | null {
+  return value === null || value === undefined || value === 0 ? (fallback ?? null) : value;
 }
 
 function sumDisplayAmounts(values: Array<number | null | undefined>): number {
@@ -365,6 +367,10 @@ function sumDisplayAmounts(values: Array<number | null | undefined>): number {
       value === null || value === undefined || value === 0 ? total : total + value,
     0,
   );
+}
+
+function valueForCalculation(value: number | null | undefined): number {
+  return value ?? 0;
 }
 
 async function fetchPayrollRecords(
@@ -396,6 +402,6 @@ function formatAmount(value: number): string {
   }).format(value);
 }
 
-function formatDisplayAmount(value: number): string {
-  return value === 0 ? "" : formatAmount(value);
+function formatDisplayAmount(value: number | null | undefined): string {
+  return value === null || value === undefined || value === 0 ? "" : formatAmount(value);
 }
