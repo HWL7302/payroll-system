@@ -2,6 +2,13 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import type { Employee, PayrollRecord } from "@/lib/types";
+import { PayrollMonthSelector } from "./PayrollMonthSelector";
+
+type EmployeePageProps = {
+  searchParams?: Promise<{
+    month?: string | string[];
+  }>;
+};
 
 type StatementCell = {
   label: string;
@@ -9,7 +16,16 @@ type StatementCell = {
   emphasis?: boolean;
 };
 
-export default async function EmployeePage() {
+type PayrollMonthOption = {
+  value: string;
+  label: string;
+};
+
+export default async function EmployeePage({ searchParams }: EmployeePageProps) {
+  const params = await searchParams;
+  const requestedMonth = Array.isArray(params?.month)
+    ? params?.month[0]
+    : params?.month;
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,6 +47,13 @@ export default async function EmployeePage() {
   const payrollRecords = employee
     ? await fetchPayrollRecords(supabase, employee.id)
     : { data: [], error: null };
+  const records = payrollRecords.data ?? [];
+  const monthOptions = buildMonthOptions(records);
+  const selectedMonth = chooseSelectedMonth(monthOptions, requestedMonth);
+  const selectedRecord =
+    records.find(
+      (record) => formatPayrollMonth(record.payroll_month) === selectedMonth,
+    ) ?? records[0];
 
   return (
     <AppShell expectedRole="employee">
@@ -58,19 +81,19 @@ export default async function EmployeePage() {
           <div className="error">
             給与明細データを取得できませんでした。管理者に確認してください。
           </div>
-        ) : payrollRecords.data.length === 0 ? (
+        ) : records.length === 0 ? (
           <section className="panel">
             <h2>給与明細一覧</h2>
             <p>表示できる給与明細データはまだありません。</p>
           </section>
         ) : (
-          payrollRecords.data.map((record) => (
-            <PayrollStatementCard
-              key={record.id}
-              employee={employee}
-              record={record}
+          <>
+            <PayrollMonthSelector
+              options={monthOptions}
+              selectedMonth={selectedMonth}
             />
-          ))
+            <PayrollStatementCard employee={employee} record={selectedRecord} />
+          </>
         )}
       </div>
     </AppShell>
@@ -91,7 +114,7 @@ function PayrollStatementCard({
       <header className="statement-header">
         <div>
           <p className="eyebrow">給与明細書</p>
-          <h2>{formatPayrollMonth(record.payroll_month)}</h2>
+          <h2>{formatPayrollMonthLabel(record.payroll_month)}</h2>
         </div>
         <div className="statement-meta">
           <div>
@@ -108,7 +131,7 @@ function PayrollStatementCard({
           </div>
           <div>
             <span>対象年月</span>
-            <strong>{formatPayrollMonth(record.payroll_month)}</strong>
+            <strong>{formatPayrollMonthLabel(record.payroll_month)}</strong>
           </div>
         </div>
       </header>
@@ -219,6 +242,30 @@ function buildStatement(record: PayrollRecord) {
   };
 }
 
+function buildMonthOptions(records: PayrollRecord[]): PayrollMonthOption[] {
+  const months = new Map<string, string>();
+
+  for (const record of records) {
+    const month = formatPayrollMonth(record.payroll_month);
+    months.set(month, formatPayrollMonthLabel(record.payroll_month));
+  }
+
+  return [...months.entries()].map(([value, label]) => ({
+    value,
+    label,
+  }));
+}
+
+function chooseSelectedMonth(
+  options: PayrollMonthOption[],
+  requestedMonth: string | undefined,
+): string {
+  const normalizedMonth = requestedMonth?.slice(0, 7);
+  const requestedOption = options.find((option) => option.value === normalizedMonth);
+
+  return requestedOption?.value ?? options[0]?.value ?? "";
+}
+
 function placeLastCellAtRowEnd(
   cells: StatementCell[],
   lastCell: StatementCell,
@@ -297,6 +344,11 @@ async function fetchPayrollRecords(
 
 function formatPayrollMonth(value: string): string {
   return value.slice(0, 7);
+}
+
+function formatPayrollMonthLabel(value: string): string {
+  const [year, month] = formatPayrollMonth(value).split("-");
+  return `${year}年${month}月`;
 }
 
 function formatAmount(value: number): string {
