@@ -438,6 +438,10 @@ th {
   margin-top: calc(var(--statement-section-line-width) * -1);
 }
 
+.statement-header + .statement-table-section {
+  margin-top: calc(var(--statement-section-line-width) * -1);
+}
+
 .statement-table-section h3 {
   display: grid;
   place-items: center;
