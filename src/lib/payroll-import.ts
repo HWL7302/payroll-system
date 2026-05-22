@@ -35,40 +35,42 @@ export const payrollImportHeaders = [
   "振込支給額",
 ] as const;
 
+export type PayrollImportNumber = number | null;
+
 export type PayrollImportInputRow = {
   rowNumber: number;
   employeeCode: string;
   payrollMonth: string;
-  attendanceDays: number;
-  holidayAttendanceDays: number;
-  paidLeaveDays: number;
-  absenceDays: number;
-  lateEarlyCount: number;
-  scheduledWorkHours: number;
-  overtimeWorkHours: number;
-  holidayWorkHours: number;
-  lateNightHours: number;
-  lateEarlyHours: number;
-  baseSalary: number;
-  overtimePay: number;
-  holidayPay: number;
-  lateNightPay: number;
-  taxableTransportationAllowance: number;
-  nonTaxableTransportationAllowance: number;
-  paymentTotal: number;
-  healthInsurance: number;
-  pensionInsurance: number;
-  employmentInsurance: number;
-  nursingCareInsurance: number;
-  otherDeductions: number;
-  incomeTax: number;
-  residentTax: number;
-  childCareSupport: number;
-  totalDeductions: number;
-  socialInsuranceTotal: number;
-  taxableAmount: number;
-  netPay: number;
-  bankTransferAmount: number;
+  attendanceDays: PayrollImportNumber;
+  holidayAttendanceDays: PayrollImportNumber;
+  paidLeaveDays: PayrollImportNumber;
+  absenceDays: PayrollImportNumber;
+  lateEarlyCount: PayrollImportNumber;
+  scheduledWorkHours: PayrollImportNumber;
+  overtimeWorkHours: PayrollImportNumber;
+  holidayWorkHours: PayrollImportNumber;
+  lateNightHours: PayrollImportNumber;
+  lateEarlyHours: PayrollImportNumber;
+  baseSalary: PayrollImportNumber;
+  overtimePay: PayrollImportNumber;
+  holidayPay: PayrollImportNumber;
+  lateNightPay: PayrollImportNumber;
+  taxableTransportationAllowance: PayrollImportNumber;
+  nonTaxableTransportationAllowance: PayrollImportNumber;
+  paymentTotal: PayrollImportNumber;
+  healthInsurance: PayrollImportNumber;
+  pensionInsurance: PayrollImportNumber;
+  employmentInsurance: PayrollImportNumber;
+  nursingCareInsurance: PayrollImportNumber;
+  otherDeductions: PayrollImportNumber;
+  incomeTax: PayrollImportNumber;
+  residentTax: PayrollImportNumber;
+  childCareSupport: PayrollImportNumber;
+  totalDeductions: PayrollImportNumber;
+  socialInsuranceTotal: PayrollImportNumber;
+  taxableAmount: PayrollImportNumber;
+  netPay: PayrollImportNumber;
+  bankTransferAmount: PayrollImportNumber;
 };
 
 export type PayrollImportParsedRow = PayrollImportInputRow & {
@@ -146,7 +148,6 @@ function readZipEntries(buffer: Buffer): Map<string, ZipEntry> {
     const data = method === 0 ? compressed : inflateRawSync(compressed);
 
     entries.set(name, { name, data });
-
     cursor += 46 + fileNameLength + extraLength + commentLength;
   }
 
@@ -242,36 +243,36 @@ function parsePayrollRow(row: CellValue[], rowNumber: number): PayrollImportPars
   }
 
   const values = {
-    attendanceDays: parseNumber(row[2], "出勤日数", errors),
-    holidayAttendanceDays: parseNumber(row[3], "休日出勤日数", errors),
-    paidLeaveDays: parseNumber(row[4], "有給日数", errors),
-    absenceDays: parseNumber(row[5], "欠勤日数", errors),
-    lateEarlyCount: parseNumber(row[6], "遅刻・早退回数", errors),
-    scheduledWorkHours: parseNumber(row[7], "所定労働時間", errors),
-    overtimeWorkHours: parseNumber(row[8], "時間外労働時間", errors),
-    holidayWorkHours: parseNumber(row[9], "休日労働時間", errors),
-    lateNightHours: parseNumber(row[10], "深夜時間", errors),
-    lateEarlyHours: parseNumber(row[11], "遅刻・早退時間", errors),
-    baseSalary: parseNumber(row[12], "基本給", errors),
-    overtimePay: parseNumber(row[13], "普通残業手当", errors),
-    holidayPay: parseNumber(row[14], "休日手当", errors),
-    lateNightPay: parseNumber(row[15], "深夜手当", errors),
-    taxableTransportationAllowance: parseNumber(row[16], "課税通勤手当", errors),
-    nonTaxableTransportationAllowance: parseNumber(row[17], "非課税通勤手当", errors),
-    paymentTotal: parseNumber(row[18], "支給額合計", errors),
-    healthInsurance: parseNumber(row[19], "健康保険", errors),
-    pensionInsurance: parseNumber(row[20], "厚生年金", errors),
-    employmentInsurance: parseNumber(row[21], "雇用保険", errors),
-    nursingCareInsurance: parseNumber(row[22], "介護保険", errors),
-    otherDeductions: parseNumber(row[23], "その他控除", errors),
-    incomeTax: parseNumber(row[24], "所得税", errors),
-    residentTax: parseNumber(row[25], "住民税", errors),
-    childCareSupport: parseNumber(row[26], "子ども・子育て支援金", errors),
-    totalDeductions: parseNumber(row[27], "控除額合計", errors),
-    socialInsuranceTotal: parseNumber(row[28], "社会保険合計", errors),
-    taxableAmount: parseNumber(row[29], "課税対象額", errors),
-    netPay: parseNumber(row[30], "差引支給額", errors),
-    bankTransferAmount: parseNumber(row[31], "振込支給額", errors),
+    attendanceDays: parseOptionalNumber(row[2], "出勤日数", errors),
+    holidayAttendanceDays: parseOptionalNumber(row[3], "休日出勤日数", errors),
+    paidLeaveDays: parseOptionalNumber(row[4], "有給日数", errors),
+    absenceDays: parseOptionalNumber(row[5], "欠勤日数", errors),
+    lateEarlyCount: parseOptionalNumber(row[6], "遅刻・早退回数", errors),
+    scheduledWorkHours: parseOptionalNumber(row[7], "所定労働時間", errors),
+    overtimeWorkHours: parseOptionalNumber(row[8], "時間外労働時間", errors),
+    holidayWorkHours: parseOptionalNumber(row[9], "休日労働時間", errors),
+    lateNightHours: parseOptionalNumber(row[10], "深夜時間", errors),
+    lateEarlyHours: parseOptionalNumber(row[11], "遅刻・早退時間", errors),
+    baseSalary: parseOptionalNumber(row[12], "基本給", errors),
+    overtimePay: parseOptionalNumber(row[13], "普通残業手当", errors),
+    holidayPay: parseOptionalNumber(row[14], "休日手当", errors),
+    lateNightPay: parseOptionalNumber(row[15], "深夜手当", errors),
+    taxableTransportationAllowance: parseOptionalNumber(row[16], "課税通勤手当", errors),
+    nonTaxableTransportationAllowance: parseOptionalNumber(row[17], "非課税通勤手当", errors),
+    paymentTotal: parseOptionalNumber(row[18], "支給額合計", errors),
+    healthInsurance: parseOptionalNumber(row[19], "健康保険", errors),
+    pensionInsurance: parseOptionalNumber(row[20], "厚生年金", errors),
+    employmentInsurance: parseOptionalNumber(row[21], "雇用保険", errors),
+    nursingCareInsurance: parseOptionalNumber(row[22], "介護保険", errors),
+    otherDeductions: parseOptionalNumber(row[23], "その他控除", errors),
+    incomeTax: parseOptionalNumber(row[24], "所得税", errors),
+    residentTax: parseOptionalNumber(row[25], "住民税", errors),
+    childCareSupport: parseOptionalNumber(row[26], "子ども・子育て支援金", errors),
+    totalDeductions: parseOptionalNumber(row[27], "控除額合計", errors),
+    socialInsuranceTotal: parseOptionalNumber(row[28], "社会保険合計", errors),
+    taxableAmount: parseOptionalNumber(row[29], "課税対象額", errors),
+    netPay: parseOptionalNumber(row[30], "差引支給額", errors),
+    bankTransferAmount: parseOptionalNumber(row[31], "振込支給額", errors),
   };
 
   return {
@@ -284,9 +285,13 @@ function parsePayrollRow(row: CellValue[], rowNumber: number): PayrollImportPars
   };
 }
 
-function parseNumber(value: CellValue, label: string, errors: string[]): number {
+function parseOptionalNumber(
+  value: CellValue,
+  label: string,
+  errors: string[],
+): PayrollImportNumber {
   if (value === null || value === "") {
-    return 0;
+    return null;
   }
 
   const normalized =
@@ -296,7 +301,7 @@ function parseNumber(value: CellValue, label: string, errors: string[]): number 
 
   if (!Number.isFinite(normalized)) {
     errors.push(`${label}が数値ではありません。`);
-    return 0;
+    return null;
   }
 
   return normalized;
@@ -363,7 +368,7 @@ function isBlankImportRow(row: PayrollImportParsedRow): boolean {
     row.bankTransferAmount,
   ];
 
-  return !row.employeeCode && !row.payrollMonth && values.every((value) => value === 0);
+  return !row.employeeCode && !row.payrollMonth && values.every((value) => value === null);
 }
 
 function normalizeText(value: CellValue): string {
