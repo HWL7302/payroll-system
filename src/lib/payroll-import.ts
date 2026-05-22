@@ -3,36 +3,72 @@ import { inflateRawSync } from "node:zlib";
 export const payrollImportHeaders = [
   "社員番号",
   "対象年月",
+  "出勤日数",
+  "休日出勤日数",
+  "有給日数",
+  "欠勤日数",
+  "遅刻・早退回数",
+  "所定労働時間",
+  "時間外労働時間",
+  "休日労働時間",
+  "深夜時間",
+  "遅刻・早退時間",
   "基本給",
-  "残業代",
-  "各種手当",
-  "交通費",
+  "普通残業手当",
+  "休日手当",
+  "深夜手当",
+  "課税通勤手当",
+  "非課税通勤手当",
+  "支給額合計",
   "健康保険",
   "厚生年金",
   "雇用保険",
+  "介護保険",
+  "その他控除",
   "所得税",
   "住民税",
-  "その他控除",
-  "控除合計",
+  "子ども・子育て支援金",
+  "控除額合計",
+  "社会保険合計",
+  "課税対象額",
   "差引支給額",
+  "振込支給額",
 ] as const;
 
 export type PayrollImportInputRow = {
   rowNumber: number;
   employeeCode: string;
   payrollMonth: string;
+  attendanceDays: number;
+  holidayAttendanceDays: number;
+  paidLeaveDays: number;
+  absenceDays: number;
+  lateEarlyCount: number;
+  scheduledWorkHours: number;
+  overtimeWorkHours: number;
+  holidayWorkHours: number;
+  lateNightHours: number;
+  lateEarlyHours: number;
   baseSalary: number;
   overtimePay: number;
-  allowances: number;
-  transportationExpense: number;
+  holidayPay: number;
+  lateNightPay: number;
+  taxableTransportationAllowance: number;
+  nonTaxableTransportationAllowance: number;
+  paymentTotal: number;
   healthInsurance: number;
   pensionInsurance: number;
   employmentInsurance: number;
+  nursingCareInsurance: number;
+  otherDeductions: number;
   incomeTax: number;
   residentTax: number;
-  otherDeductions: number;
+  childCareSupport: number;
   totalDeductions: number;
+  socialInsuranceTotal: number;
+  taxableAmount: number;
   netPay: number;
+  bankTransferAmount: number;
 };
 
 export type PayrollImportParsedRow = PayrollImportInputRow & {
@@ -109,10 +145,7 @@ function readZipEntries(buffer: Buffer): Map<string, ZipEntry> {
     const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
     const data = method === 0 ? compressed : inflateRawSync(compressed);
 
-    entries.set(name, {
-      name,
-      data,
-    });
+    entries.set(name, { name, data });
 
     cursor += 46 + fileNameLength + extraLength + commentLength;
   }
@@ -187,10 +220,7 @@ function readCellValue(
 }
 
 function validateHeaders(headerRow: CellValue[]): string[] {
-  const headers = payrollImportHeaders.map((header, index) => {
-    return normalizeText(headerRow[index]);
-  });
-
+  const headers = payrollImportHeaders.map((header, index) => normalizeText(headerRow[index]));
   const missing = payrollImportHeaders.filter((header, index) => headers[index] !== header);
 
   return missing.length > 0
@@ -212,18 +242,36 @@ function parsePayrollRow(row: CellValue[], rowNumber: number): PayrollImportPars
   }
 
   const values = {
-    baseSalary: parseMoney(row[2], "基本給", errors),
-    overtimePay: parseMoney(row[3], "残業代", errors),
-    allowances: parseMoney(row[4], "各種手当", errors),
-    transportationExpense: parseMoney(row[5], "交通費", errors),
-    healthInsurance: parseMoney(row[6], "健康保険", errors),
-    pensionInsurance: parseMoney(row[7], "厚生年金", errors),
-    employmentInsurance: parseMoney(row[8], "雇用保険", errors),
-    incomeTax: parseMoney(row[9], "所得税", errors),
-    residentTax: parseMoney(row[10], "住民税", errors),
-    otherDeductions: parseMoney(row[11], "その他控除", errors),
-    totalDeductions: parseMoney(row[12], "控除合計", errors),
-    netPay: parseMoney(row[13], "差引支給額", errors),
+    attendanceDays: parseNumber(row[2], "出勤日数", errors),
+    holidayAttendanceDays: parseNumber(row[3], "休日出勤日数", errors),
+    paidLeaveDays: parseNumber(row[4], "有給日数", errors),
+    absenceDays: parseNumber(row[5], "欠勤日数", errors),
+    lateEarlyCount: parseNumber(row[6], "遅刻・早退回数", errors),
+    scheduledWorkHours: parseNumber(row[7], "所定労働時間", errors),
+    overtimeWorkHours: parseNumber(row[8], "時間外労働時間", errors),
+    holidayWorkHours: parseNumber(row[9], "休日労働時間", errors),
+    lateNightHours: parseNumber(row[10], "深夜時間", errors),
+    lateEarlyHours: parseNumber(row[11], "遅刻・早退時間", errors),
+    baseSalary: parseNumber(row[12], "基本給", errors),
+    overtimePay: parseNumber(row[13], "普通残業手当", errors),
+    holidayPay: parseNumber(row[14], "休日手当", errors),
+    lateNightPay: parseNumber(row[15], "深夜手当", errors),
+    taxableTransportationAllowance: parseNumber(row[16], "課税通勤手当", errors),
+    nonTaxableTransportationAllowance: parseNumber(row[17], "非課税通勤手当", errors),
+    paymentTotal: parseNumber(row[18], "支給額合計", errors),
+    healthInsurance: parseNumber(row[19], "健康保険", errors),
+    pensionInsurance: parseNumber(row[20], "厚生年金", errors),
+    employmentInsurance: parseNumber(row[21], "雇用保険", errors),
+    nursingCareInsurance: parseNumber(row[22], "介護保険", errors),
+    otherDeductions: parseNumber(row[23], "その他控除", errors),
+    incomeTax: parseNumber(row[24], "所得税", errors),
+    residentTax: parseNumber(row[25], "住民税", errors),
+    childCareSupport: parseNumber(row[26], "子ども・子育て支援金", errors),
+    totalDeductions: parseNumber(row[27], "控除額合計", errors),
+    socialInsuranceTotal: parseNumber(row[28], "社会保険合計", errors),
+    taxableAmount: parseNumber(row[29], "課税対象額", errors),
+    netPay: parseNumber(row[30], "差引支給額", errors),
+    bankTransferAmount: parseNumber(row[31], "振込支給額", errors),
   };
 
   return {
@@ -236,7 +284,7 @@ function parsePayrollRow(row: CellValue[], rowNumber: number): PayrollImportPars
   };
 }
 
-function parseMoney(value: CellValue, label: string, errors: string[]): number {
+function parseNumber(value: CellValue, label: string, errors: string[]): number {
   if (value === null || value === "") {
     return 0;
   }
@@ -282,22 +330,40 @@ function excelSerialDateToUtc(serial: number): Date {
 }
 
 function isBlankImportRow(row: PayrollImportParsedRow): boolean {
-  return (
-    !row.employeeCode &&
-    !row.payrollMonth &&
-    row.baseSalary === 0 &&
-    row.overtimePay === 0 &&
-    row.allowances === 0 &&
-    row.transportationExpense === 0 &&
-    row.healthInsurance === 0 &&
-    row.pensionInsurance === 0 &&
-    row.employmentInsurance === 0 &&
-    row.incomeTax === 0 &&
-    row.residentTax === 0 &&
-    row.otherDeductions === 0 &&
-    row.totalDeductions === 0 &&
-    row.netPay === 0
-  );
+  const values = [
+    row.attendanceDays,
+    row.holidayAttendanceDays,
+    row.paidLeaveDays,
+    row.absenceDays,
+    row.lateEarlyCount,
+    row.scheduledWorkHours,
+    row.overtimeWorkHours,
+    row.holidayWorkHours,
+    row.lateNightHours,
+    row.lateEarlyHours,
+    row.baseSalary,
+    row.overtimePay,
+    row.holidayPay,
+    row.lateNightPay,
+    row.taxableTransportationAllowance,
+    row.nonTaxableTransportationAllowance,
+    row.paymentTotal,
+    row.healthInsurance,
+    row.pensionInsurance,
+    row.employmentInsurance,
+    row.nursingCareInsurance,
+    row.otherDeductions,
+    row.incomeTax,
+    row.residentTax,
+    row.childCareSupport,
+    row.totalDeductions,
+    row.socialInsuranceTotal,
+    row.taxableAmount,
+    row.netPay,
+    row.bankTransferAmount,
+  ];
+
+  return !row.employeeCode && !row.payrollMonth && values.every((value) => value === 0);
 }
 
 function normalizeText(value: CellValue): string {
