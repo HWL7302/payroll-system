@@ -122,7 +122,7 @@ function PayrollStatementCard({
 
       <footer className="statement-total">
         <span>振込支給額</span>
-        <strong>{formatAmount(record.net_pay)}</strong>
+        <strong>{formatDisplayAmount(record.bank_transfer_amount || record.net_pay)}</strong>
       </footer>
     </article>
   );
@@ -164,65 +164,44 @@ function StatementTableSection({
 }
 
 function buildStatement(record: PayrollRecord) {
-  const taxableTransportationAllowance: number | null = null;
-  const nonTaxableTransportationAllowance = record.transportation_expense;
-  const holidayAllowance: number | null = null;
-  const lateNightAllowance: number | null = null;
-  const nursingCareInsurance: number | null = null;
-  const childCareSupport: number | null = null;
-
-  const paymentTotal = sumKnownAmounts([
-    record.base_salary,
-    record.overtime_pay,
-    holidayAllowance,
-    lateNightAllowance,
-    taxableTransportationAllowance,
-    nonTaxableTransportationAllowance,
-  ]);
-  const socialInsuranceTotal = sumKnownAmounts([
-    record.health_insurance,
-    record.pension_insurance,
-    record.employment_insurance,
-    nursingCareInsurance,
-  ]);
-  const taxableAmount =
-    paymentTotal - nonTaxableTransportationAllowance - socialInsuranceTotal;
-
   const paymentItems = [
     amountCell("基本給", record.base_salary),
     amountCell("普通残業手当", record.overtime_pay),
-    amountCell("休日手当", holidayAllowance),
-    amountCell("深夜手当", lateNightAllowance),
-    amountCell("課税通勤手当", taxableTransportationAllowance),
-    amountCell("非課税通勤手当", nonTaxableTransportationAllowance),
+    amountCell("休日手当", record.holiday_pay),
+    amountCell("深夜手当", record.late_night_pay),
+    amountCell("課税通勤手当", record.taxable_transportation_allowance),
+    amountCell(
+      "非課税通勤手当",
+      record.non_taxable_transportation_allowance || record.transportation_expense,
+    ),
   ];
   const deductionItems = [
     amountCell("健康保険", record.health_insurance),
-    amountCell("介護保険", nursingCareInsurance),
     amountCell("厚生年金", record.pension_insurance),
     amountCell("雇用保険", record.employment_insurance),
+    amountCell("介護保険", record.nursing_care_insurance),
+    amountCell("その他控除", record.other_deductions),
     amountCell("所得税", record.income_tax),
     amountCell("住民税", record.resident_tax),
-    amountCell("子ども・子育て支援金", childCareSupport),
-    amountCell("その他控除", record.other_deductions),
+    amountCell("子ども・子育て支援金", record.child_care_support),
   ];
 
   return {
     attendanceCells: [
-      valueCell("出勤日数", null),
-      valueCell("休日出勤日数", null),
-      valueCell("有給日数", null),
-      valueCell("欠勤日数", null),
-      valueCell("遅刻・早退回数", null),
-      valueCell("所定労働時間", null),
-      valueCell("時間外労働時間", null),
-      valueCell("休日労働時間", null),
-      valueCell("深夜時間", null),
-      valueCell("遅刻・早退時間", null),
+      valueCell("出勤日数", record.attendance_days),
+      valueCell("休日出勤日数", record.holiday_attendance_days),
+      valueCell("有給日数", record.paid_leave_days),
+      valueCell("欠勤日数", record.absence_days),
+      valueCell("遅刻・早退回数", record.late_early_count),
+      valueCell("所定労働時間", record.scheduled_work_hours),
+      valueCell("時間外労働時間", record.overtime_work_hours),
+      valueCell("休日労働時間", record.holiday_work_hours),
+      valueCell("深夜時間", record.late_night_hours),
+      valueCell("遅刻・早退時間", record.late_early_hours),
     ],
     paymentCells: placeLastCellAtRowEnd(
       paymentItems,
-      amountCell("支給額合計", paymentTotal, true),
+      amountCell("支給額合計", record.payment_total, true),
       5,
     ),
     deductionCells: placeLastCellAtRowEnd(
@@ -231,8 +210,8 @@ function buildStatement(record: PayrollRecord) {
       5,
     ),
     totalCells: [
-      amountCell("社会保険合計", socialInsuranceTotal),
-      amountCell("課税対象額", taxableAmount),
+      amountCell("社会保険合計", record.social_insurance_total),
+      amountCell("課税対象額", record.taxable_amount),
       blankCell(),
       blankCell(),
       amountCell("差引支給額", record.net_pay, true),
@@ -286,7 +265,7 @@ function blankCell(): StatementCell {
 function valueCell(label: string, value: string | number | null): StatementCell {
   return {
     label,
-    value: value === null ? "" : String(value),
+    value: value === null || value === 0 ? "" : String(value),
   };
 }
 
@@ -297,13 +276,9 @@ function amountCell(
 ): StatementCell {
   return {
     label,
-    value: value === null ? "" : formatAmount(value),
+    value: value === null || value === 0 ? "" : formatAmount(value),
     emphasis,
   };
-}
-
-function sumKnownAmounts(values: Array<number | null>): number {
-  return values.reduce<number>((total, value) => total + (value ?? 0), 0);
 }
 
 async function fetchPayrollRecords(
@@ -313,7 +288,7 @@ async function fetchPayrollRecords(
   return supabase
     .from("payroll_records")
     .select(
-      "id, employee_id, payroll_month, base_salary, overtime_pay, allowances, transportation_expense, health_insurance, pension_insurance, employment_insurance, income_tax, resident_tax, other_deductions, total_deductions, net_pay, created_at, updated_at",
+      "id, employee_id, payroll_month, attendance_days, holiday_attendance_days, paid_leave_days, absence_days, late_early_count, scheduled_work_hours, overtime_work_hours, holiday_work_hours, late_night_hours, late_early_hours, base_salary, overtime_pay, allowances, holiday_pay, late_night_pay, taxable_transportation_allowance, non_taxable_transportation_allowance, payment_total, transportation_expense, health_insurance, pension_insurance, employment_insurance, nursing_care_insurance, income_tax, resident_tax, child_care_support, other_deductions, total_deductions, social_insurance_total, taxable_amount, bank_transfer_amount, net_pay, created_at, updated_at",
     )
     .eq("employee_id", employeeId)
     .order("payroll_month", { ascending: false })
@@ -328,4 +303,8 @@ function formatAmount(value: number): string {
   return new Intl.NumberFormat("ja-JP", {
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function formatDisplayAmount(value: number): string {
+  return value === 0 ? "" : formatAmount(value);
 }
