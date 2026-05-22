@@ -145,7 +145,7 @@ function PayrollStatementCard({
 
       <footer className="statement-total">
         <span>振込支給額</span>
-        <strong>{formatDisplayAmount(record.bank_transfer_amount || record.net_pay)}</strong>
+        <strong>{formatDisplayAmount(nonZeroOrFallback(record.bank_transfer_amount, record.net_pay))}</strong>
       </footer>
     </article>
   );
@@ -187,16 +187,40 @@ function StatementTableSection({
 }
 
 function buildStatement(record: PayrollRecord) {
+  const nonTaxableTransportationAllowance = nonZeroOrFallback(
+    record.non_taxable_transportation_allowance,
+    record.transportation_expense,
+  );
+  const paymentTotalFallback = sumDisplayAmounts([
+    record.base_salary,
+    record.overtime_pay,
+    record.holiday_pay,
+    record.late_night_pay,
+    record.taxable_transportation_allowance,
+    nonTaxableTransportationAllowance,
+  ]);
+  const socialInsuranceTotalFallback = sumDisplayAmounts([
+    record.health_insurance,
+    record.pension_insurance,
+    record.employment_insurance,
+    record.nursing_care_insurance,
+  ]);
+  const paymentTotal = nonZeroOrFallback(record.payment_total, paymentTotalFallback);
+  const socialInsuranceTotal = nonZeroOrFallback(
+    record.social_insurance_total,
+    socialInsuranceTotalFallback,
+  );
+  const taxableAmountFallback =
+    paymentTotal - nonTaxableTransportationAllowance - socialInsuranceTotal;
+  const taxableAmount = nonZeroOrFallback(record.taxable_amount, taxableAmountFallback);
+
   const paymentItems = [
     amountCell("基本給", record.base_salary),
     amountCell("普通残業手当", record.overtime_pay),
     amountCell("休日手当", record.holiday_pay),
     amountCell("深夜手当", record.late_night_pay),
     amountCell("課税通勤手当", record.taxable_transportation_allowance),
-    amountCell(
-      "非課税通勤手当",
-      record.non_taxable_transportation_allowance || record.transportation_expense,
-    ),
+    amountCell("非課税通勤手当", nonTaxableTransportationAllowance),
   ];
   const deductionItems = [
     amountCell("健康保険", record.health_insurance),
@@ -224,7 +248,7 @@ function buildStatement(record: PayrollRecord) {
     ],
     paymentCells: placeLastCellAtRowEnd(
       paymentItems,
-      amountCell("支給額合計", record.payment_total, true),
+      amountCell("支給額合計", paymentTotal, true),
       5,
     ),
     deductionCells: placeLastCellAtRowEnd(
@@ -233,8 +257,8 @@ function buildStatement(record: PayrollRecord) {
       5,
     ),
     totalCells: [
-      amountCell("社会保険合計", record.social_insurance_total),
-      amountCell("課税対象額", record.taxable_amount),
+      amountCell("社会保険合計", socialInsuranceTotal),
+      amountCell("課税対象額", taxableAmount),
       blankCell(),
       blankCell(),
       amountCell("差引支給額", record.net_pay, true),
@@ -309,23 +333,38 @@ function blankCell(): StatementCell {
   };
 }
 
-function valueCell(label: string, value: string | number | null): StatementCell {
+function valueCell(label: string, value: string | number | null | undefined): StatementCell {
   return {
     label,
-    value: value === null || value === 0 ? "" : String(value),
+    value: value === null || value === undefined || value === 0 ? "" : String(value),
   };
 }
 
 function amountCell(
   label: string,
-  value: number | null,
+  value: number | null | undefined,
   emphasis = false,
 ): StatementCell {
   return {
     label,
-    value: value === null || value === 0 ? "" : formatAmount(value),
+    value: value === null || value === undefined || value === 0 ? "" : formatAmount(value),
     emphasis,
   };
+}
+
+function nonZeroOrFallback(
+  value: number | null | undefined,
+  fallback: number,
+): number {
+  return value === null || value === undefined || value === 0 ? fallback : value;
+}
+
+function sumDisplayAmounts(values: Array<number | null | undefined>): number {
+  return values.reduce<number>(
+    (total, value) =>
+      value === null || value === undefined || value === 0 ? total : total + value,
+    0,
+  );
 }
 
 async function fetchPayrollRecords(
