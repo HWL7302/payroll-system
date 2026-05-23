@@ -5,7 +5,7 @@ import { TaxDocumentUploadForm } from "./TaxDocumentUploadForm";
 type TaxDocumentRow = {
   id: string;
   employee_id: string;
-  year: number;
+  tax_year: number;
   file_path: string;
   uploaded_at: string;
   employees: {
@@ -25,10 +25,10 @@ export default async function AdminTaxDocumentsPage() {
     .order("employee_code", { ascending: true });
   const { data: documentsData, error: documentsError } = await supabase
     .from("tax_documents")
-    .select("id, employee_id, year, file_path, uploaded_at, employees(employee_code, name)")
-    .not("year", "is", null)
+    .select("id, employee_id, tax_year, file_path, uploaded_at, employees(employee_code, name)")
+    .not("tax_year", "is", null)
     .not("file_path", "is", null)
-    .order("year", { ascending: false })
+    .order("tax_year", { ascending: false })
     .order("uploaded_at", { ascending: false });
 
   const employees = employeesData ?? [];
@@ -84,7 +84,7 @@ export default async function AdminTaxDocumentsPage() {
                 <tbody>
                   {documents.map((document) => (
                     <tr key={document.id}>
-                      <td>{document.year}年</td>
+                      <td>{document.tax_year}年</td>
                       <td>{getEmployee(document)?.employee_code ?? "-"}</td>
                       <td>{getEmployee(document)?.name ?? "-"}</td>
                       <td>{document.file_path}</td>
