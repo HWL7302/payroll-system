@@ -547,6 +547,55 @@ th {
   font-weight: 700;
 }
 
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  :root {
+    --background: #ffffff;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .topbar,
+  .page-header,
+  .statement-filter,
+  .statement-download {
+    display: none !important;
+  }
+
+  .main {
+    width: 100%;
+    margin: 0;
+  }
+
+  .stack {
+    display: block;
+  }
+
+  .payroll-statement {
+    border-radius: 0;
+    break-inside: avoid;
+  }
+
+  .statement-header {
+    grid-template-columns: minmax(180px, 240px) 1fr;
+    padding: 16px 20px;
+  }
+
+  .statement-total {
+    padding: 18px 20px;
+  }
+
+  .button {
+    display: none !important;
+  }
+}
+
 @media (max-width: 720px) {
   .topbar {
     height: auto;
