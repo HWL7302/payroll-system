@@ -40,8 +40,8 @@ export function TaxDocumentUploadForm({ employees }: TaxDocumentUploadFormProps)
           </select>
         </div>
         <div className="field">
-          <label htmlFor="year">年度</label>
-          <select id="year" name="year" required defaultValue={currentYear}>
+          <label htmlFor="tax_year">年度</label>
+          <select id="tax_year" name="tax_year" required defaultValue={currentYear}>
             {yearOptions.map((year) => (
               <option key={year} value={year}>
                 {year}年
