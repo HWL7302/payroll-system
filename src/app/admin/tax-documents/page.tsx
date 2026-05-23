@@ -11,6 +11,9 @@ type TaxDocumentRow = {
   employees: {
     employee_code: string;
     name: string;
+  } | {
+    employee_code: string;
+    name: string;
   }[] | null;
 };
 
@@ -80,8 +83,8 @@ export default async function AdminTaxDocumentsPage() {
                   {documents.map((document) => (
                     <tr key={document.id}>
                       <td>{document.year}年</td>
-                      <td>{document.employees?.[0]?.employee_code ?? "-"}</td>
-                      <td>{document.employees?.[0]?.name ?? "-"}</td>
+                      <td>{getEmployee(document)?.employee_code ?? "-"}</td>
+                      <td>{getEmployee(document)?.name ?? "-"}</td>
                       <td>{document.file_path}</td>
                       <td>{formatDateTime(document.uploaded_at)}</td>
                     </tr>
@@ -94,6 +97,12 @@ export default async function AdminTaxDocumentsPage() {
       </div>
     </AppShell>
   );
+}
+
+function getEmployee(document: TaxDocumentRow) {
+  return Array.isArray(document.employees)
+    ? (document.employees[0] ?? null)
+    : document.employees;
 }
 
 function formatDateTime(value: string): string {
