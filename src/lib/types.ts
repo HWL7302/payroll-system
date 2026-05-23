@@ -54,3 +54,13 @@ export type PayrollRecord = {
   created_at: string;
   updated_at: string;
 };
+
+export type TaxDocument = {
+  id: string;
+  employee_id: string;
+  year: number;
+  file_path: string;
+  uploaded_at: string;
+  created_at: string;
+  updated_at: string;
+};
