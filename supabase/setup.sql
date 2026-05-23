@@ -125,36 +125,36 @@ alter table public.payroll_records
 create table if not exists public.tax_documents (
   id uuid primary key default gen_random_uuid(),
   employee_id uuid not null references public.employees(id) on delete cascade,
-  year integer not null,
+  tax_year integer not null,
   file_path text not null,
   uploaded_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (employee_id, year)
+  unique (employee_id, tax_year)
 );
 
 alter table public.tax_documents
-  add column if not exists year integer,
+  add column if not exists tax_year integer,
   add column if not exists file_path text,
   add column if not exists uploaded_at timestamptz not null default now();
 
 alter table public.tax_documents
-  add column if not exists tax_year integer,
+  add column if not exists year integer,
   add column if not exists document_type text not null default 'withholding_slip',
   add column if not exists pdf_storage_path text,
   add column if not exists issued_at date;
 
 update public.tax_documents
 set
-  year = coalesce(year, tax_year),
+  tax_year = coalesce(tax_year, year),
   file_path = coalesce(file_path, pdf_storage_path),
   uploaded_at = coalesce(uploaded_at, updated_at, created_at, now())
-where year is null
+where tax_year is null
    or file_path is null
    or uploaded_at is null;
 
-create unique index if not exists tax_documents_employee_year_key
-on public.tax_documents (employee_id, year);
+create unique index if not exists tax_documents_employee_tax_year_key
+on public.tax_documents (employee_id, tax_year);
 
 insert into storage.buckets (id, name, public)
 values ('tax-documents', 'tax-documents', false)
