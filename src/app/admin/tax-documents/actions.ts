@@ -70,26 +70,39 @@ export async function uploadTaxDocument(
 
   if (uploadError) {
     return {
-      error:
-        "PDFをアップロードできませんでした。Supabase Storage の bucket と policy を確認してください。",
+      error: `PDFをアップロードできませんでした。${formatSupabaseError(uploadError)}`,
     };
   }
 
-  const { error: upsertError } = await supabase.from("tax_documents").upsert(
-    {
-      employee_id: employeeId,
-      year,
-      file_path: filePath,
-      uploaded_at: new Date().toISOString(),
-    },
-    { onConflict: "employee_id,year" },
-  );
+  const uploadedAt = new Date().toISOString();
+  const documentPayload = {
+    employee_id: employeeId,
+    year,
+    file_path: filePath,
+    uploaded_at: uploadedAt,
+  };
+  const { count: updatedCount, error: updateError } = await supabase
+    .from("tax_documents")
+    .update(documentPayload, { count: "exact" })
+    .eq("employee_id", employeeId)
+    .eq("year", year);
 
-  if (upsertError) {
+  if (updateError) {
     return {
-      error:
-        "アップロード情報を保存できませんでした。Supabase の setup SQL が最新か確認してください。",
+      error: `アップロード情報を更新できませんでした。${formatSupabaseError(updateError)}`,
     };
+  }
+
+  if ((updatedCount ?? 0) === 0) {
+    const { error: insertError } = await supabase
+      .from("tax_documents")
+      .insert(documentPayload);
+
+    if (insertError) {
+      return {
+        error: `アップロード情報を保存できませんでした。${formatSupabaseError(insertError)}`,
+      };
+    }
   }
 
   revalidatePath("/admin/tax-documents");
@@ -98,4 +111,11 @@ export async function uploadTaxDocument(
   return {
     success: `${employee.employee_code} ${employee.name} / ${year}年 の源泉徴収票PDFを保存しました。`,
   };
+}
+
+function formatSupabaseError(error: { code?: string; message?: string }): string {
+  const code = error.code ? `エラーコード: ${error.code}。` : "";
+  const message = error.message ? `詳細: ${error.message}` : "";
+
+  return `${code}${message}` || "Supabase の setup SQL と RLS policy を確認してください。";
 }
