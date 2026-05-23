@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import type { Employee, PayrollRecord } from "@/lib/types";
-import { PayrollMonthSelector } from "./PayrollMonthSelector";
+import {
+  PayrollDownloadButton,
+  PayrollMonthSelector,
+} from "./PayrollMonthSelector";
 
 type EmployeePageProps = {
   searchParams?: Promise<{
@@ -108,13 +111,15 @@ function PayrollStatementCard({
   record: PayrollRecord;
 }) {
   const statement = buildStatement(record);
+  const payrollMonthLabel = formatPayrollMonthLabel(record.payroll_month);
+  const downloadFileName = `給与明細_${employee.employee_code}_${formatPayrollMonth(record.payroll_month)}`;
 
   return (
     <article className="payroll-statement">
       <header className="statement-header">
         <div>
           <p className="eyebrow">給与明細書</p>
-          <h2>{formatPayrollMonthLabel(record.payroll_month)}</h2>
+          <h2>{payrollMonthLabel}</h2>
         </div>
         <div className="statement-meta">
           <div>
@@ -131,13 +136,11 @@ function PayrollStatementCard({
           </div>
           <div>
             <span>対象年月</span>
-            <strong>{formatPayrollMonthLabel(record.payroll_month)}</strong>
+            <strong>{payrollMonthLabel}</strong>
           </div>
         </div>
         <div className="statement-download">
-          <button className="button secondary" type="button">
-            給与明細ダウンロード
-          </button>
+          <PayrollDownloadButton fileName={downloadFileName} />
         </div>
       </header>
 
