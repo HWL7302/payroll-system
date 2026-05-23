@@ -125,14 +125,40 @@ alter table public.payroll_records
 create table if not exists public.tax_documents (
   id uuid primary key default gen_random_uuid(),
   employee_id uuid not null references public.employees(id) on delete cascade,
-  tax_year integer not null,
-  document_type text not null default 'withholding_slip',
-  pdf_storage_path text,
-  issued_at date,
+  year integer not null,
+  file_path text not null,
+  uploaded_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (employee_id, tax_year, document_type)
+  unique (employee_id, year)
 );
+
+alter table public.tax_documents
+  add column if not exists year integer,
+  add column if not exists file_path text,
+  add column if not exists uploaded_at timestamptz not null default now();
+
+alter table public.tax_documents
+  add column if not exists tax_year integer,
+  add column if not exists document_type text not null default 'withholding_slip',
+  add column if not exists pdf_storage_path text,
+  add column if not exists issued_at date;
+
+update public.tax_documents
+set
+  year = coalesce(year, tax_year),
+  file_path = coalesce(file_path, pdf_storage_path),
+  uploaded_at = coalesce(uploaded_at, updated_at, created_at, now())
+where year is null
+   or file_path is null
+   or uploaded_at is null;
+
+create unique index if not exists tax_documents_employee_year_key
+on public.tax_documents (employee_id, year);
+
+insert into storage.buckets (id, name, public)
+values ('tax-documents', 'tax-documents', false)
+on conflict (id) do update set public = false;
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -227,6 +253,29 @@ using (
     select 1
     from public.employees
     where employees.id = tax_documents.employee_id
+      and (employees.auth_user_id = auth.uid() or lower(employees.email) = lower(coalesce(auth.jwt() ->> 'email', '')))
+  )
+);
+
+drop policy if exists "Admins can manage tax document files" on storage.objects;
+create policy "Admins can manage tax document files"
+on storage.objects
+for all
+to authenticated
+using (bucket_id = 'tax-documents' and public.is_admin())
+with check (bucket_id = 'tax-documents' and public.is_admin());
+
+drop policy if exists "Employees can view own tax document files" on storage.objects;
+create policy "Employees can view own tax document files"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'tax-documents'
+  and exists (
+    select 1
+    from public.employees
+    where employees.id::text = split_part(storage.objects.name, '/', 1)
       and (employees.auth_user_id = auth.uid() or lower(employees.email) = lower(coalesce(auth.jwt() ->> 'email', '')))
   )
 );
