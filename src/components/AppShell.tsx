@@ -25,7 +25,7 @@ export async function AppShell({ children, expectedRole }: AppShellProps) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${role}-theme`}>
       <header className="topbar">
         <a className="brand" href={role === "admin" ? "/admin" : "/employee"}>
           給与閲覧システム
