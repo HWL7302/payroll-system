@@ -185,6 +185,8 @@ async function fetchTaxDocuments(
     .from("tax_documents")
     .select("id, employee_id, year, file_path, uploaded_at, created_at, updated_at")
     .eq("employee_id", employeeId)
+    .not("year", "is", null)
+    .not("file_path", "is", null)
     .order("year", { ascending: false })
     .returns<TaxDocument[]>();
 }
