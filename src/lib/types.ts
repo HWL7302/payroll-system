@@ -58,7 +58,7 @@ export type PayrollRecord = {
 export type TaxDocument = {
   id: string;
   employee_id: string;
-  year: number;
+  tax_year: number;
   file_path: string;
   uploaded_at: string;
   created_at: string;
