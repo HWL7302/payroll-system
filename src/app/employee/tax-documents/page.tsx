@@ -47,7 +47,7 @@ export default async function TaxDocumentsPage({
   const yearOptions = buildYearOptions(documents);
   const selectedYear = chooseSelectedYear(yearOptions, requestedYear);
   const selectedDocument = documents.find(
-    (document) => String(document.year) === selectedYear,
+    (document) => String(document.tax_year) === selectedYear,
   );
   const documentsWithDownload = await buildDocumentsWithDownloadUrls(
     supabase,
@@ -144,7 +144,7 @@ export default async function TaxDocumentsPage({
                   <tbody>
                     {yearOptions.map((year) => {
                       const document = documentsWithDownload.find(
-                        (item) => String(item.year) === year,
+                        (item) => String(item.tax_year) === year,
                       );
 
                       return (
@@ -183,11 +183,11 @@ async function fetchTaxDocuments(
 ) {
   return supabase
     .from("tax_documents")
-    .select("id, employee_id, year, file_path, uploaded_at, created_at, updated_at")
+    .select("id, employee_id, tax_year, file_path, uploaded_at, created_at, updated_at")
     .eq("employee_id", employeeId)
-    .not("year", "is", null)
+    .not("tax_year", "is", null)
     .not("file_path", "is", null)
-    .order("year", { ascending: false })
+    .order("tax_year", { ascending: false })
     .returns<TaxDocument[]>();
 }
 
@@ -201,7 +201,7 @@ async function buildDocumentsWithDownloadUrls(
     const { data } = await supabase.storage
       .from(TAX_DOCUMENT_BUCKET)
       .createSignedUrl(document.file_path, 300, {
-        download: `源泉徴収票_${document.year}.pdf`,
+        download: `源泉徴収票_${document.tax_year}.pdf`,
       });
 
     documentsWithUrls.push({
@@ -222,7 +222,7 @@ function buildYearOptions(documents: TaxDocument[]): string[] {
   ]);
 
   for (const document of documents) {
-    years.add(String(document.year));
+    years.add(String(document.tax_year));
   }
 
   return [...years].sort((left, right) => Number(right) - Number(left));
