@@ -26,6 +26,8 @@ export default async function AdminTaxDocumentsPage() {
   const { data: documentsData, error: documentsError } = await supabase
     .from("tax_documents")
     .select("id, employee_id, year, file_path, uploaded_at, employees(employee_code, name)")
+    .not("year", "is", null)
+    .not("file_path", "is", null)
     .order("year", { ascending: false })
     .order("uploaded_at", { ascending: false });
 
