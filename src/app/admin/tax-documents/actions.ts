@@ -30,15 +30,15 @@ export async function uploadTaxDocument(
   }
 
   const employeeId = String(formData.get("employee_id") ?? "");
-  const yearValue = String(formData.get("year") ?? "");
+  const yearValue = String(formData.get("tax_year") ?? "");
   const file = formData.get("file");
-  const year = Number(yearValue);
+  const taxYear = Number(yearValue);
 
   if (!employeeId) {
     return { error: "従業員を選択してください。" };
   }
 
-  if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+  if (!Number.isInteger(taxYear) || taxYear < 2000 || taxYear > 2100) {
     return { error: "年度を正しく入力してください。" };
   }
 
@@ -60,7 +60,7 @@ export async function uploadTaxDocument(
     return { error: "選択した従業員を確認できませんでした。" };
   }
 
-  const filePath = `${employeeId}/${year}/withholding-slip.pdf`;
+  const filePath = `${employeeId}/${taxYear}/withholding-slip.pdf`;
   const { error: uploadError } = await supabase.storage
     .from(TAX_DOCUMENT_BUCKET)
     .upload(filePath, file, {
@@ -77,7 +77,7 @@ export async function uploadTaxDocument(
   const uploadedAt = new Date().toISOString();
   const documentPayload = {
     employee_id: employeeId,
-    year,
+    tax_year: taxYear,
     file_path: filePath,
     uploaded_at: uploadedAt,
   };
@@ -85,7 +85,7 @@ export async function uploadTaxDocument(
     .from("tax_documents")
     .update(documentPayload, { count: "exact" })
     .eq("employee_id", employeeId)
-    .eq("year", year);
+    .eq("tax_year", taxYear);
 
   if (updateError) {
     return {
@@ -109,7 +109,7 @@ export async function uploadTaxDocument(
   revalidatePath("/employee/tax-documents");
 
   return {
-    success: `${employee.employee_code} ${employee.name} / ${year}年 の源泉徴収票PDFを保存しました。`,
+    success: `${employee.employee_code} ${employee.name} / ${taxYear}年 の源泉徴収票PDFを保存しました。`,
   };
 }
 
