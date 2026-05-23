@@ -28,6 +28,13 @@ export default function AdminPage() {
             給与Excel取込へ
           </a>
         </section>
+        <section className="panel">
+          <h2>源泉徴収票PDF</h2>
+          <p>従業員ごとの源泉徴収票PDFを年度別にアップロード・確認できます。</p>
+          <a className="button" href="/admin/tax-documents">
+            源泉徴収票PDF管理へ
+          </a>
+        </section>
       </div>
     </AppShell>
   );
