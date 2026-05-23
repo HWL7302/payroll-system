@@ -62,13 +62,12 @@ export default async function EmployeePage({ searchParams }: EmployeePageProps) 
     <AppShell expectedRole="employee">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Employee</p>
+          <p className="eyebrow">株式会社HWL</p>
           <h1>給与明細</h1>
-          <p className="lead">
-            ログイン中のメールアドレスに紐づく給与明細データを表示します。
-          </p>
         </div>
-        <span className="status-pill">Payroll</span>
+        <a className="button secondary" href="/employee/tax-documents">
+          源泉徴収票
+        </a>
       </div>
 
       <div className="stack">
