@@ -12,6 +12,10 @@ type PayrollMonthSelectorProps = {
   selectedMonth: string;
 };
 
+type PayrollDownloadButtonProps = {
+  fileName: string;
+};
+
 export function PayrollMonthSelector({
   options,
   selectedMonth,
@@ -47,5 +51,30 @@ export function PayrollMonthSelector({
         </select>
       </label>
     </section>
+  );
+}
+
+export function PayrollDownloadButton({ fileName }: PayrollDownloadButtonProps) {
+  function handleDownload() {
+    const originalTitle = document.title;
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+
+    window.addEventListener("afterprint", restoreTitle);
+    document.title = fileName;
+    window.print();
+  }
+
+  return (
+    <button
+      className="button secondary"
+      type="button"
+      onClick={handleDownload}
+      aria-label={`${fileName}をPDF保存`}
+    >
+      給与明細ダウンロード
+    </button>
   );
 }
