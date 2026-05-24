@@ -27,10 +27,6 @@ export function EmployeeForm() {
           <input id="email" name="email" type="email" required />
         </div>
         <div className="field">
-          <label htmlFor="auth_user_id">AuthユーザーID</label>
-          <input id="auth_user_id" name="auth_user_id" />
-        </div>
-        <div className="field">
           <label htmlFor="hire_date">入社日</label>
           <input id="hire_date" name="hire_date" type="date" />
         </div>
@@ -42,8 +38,8 @@ export function EmployeeForm() {
           <label htmlFor="status">ステータス</label>
           <select id="status" name="status" defaultValue="active">
             <option value="active">在籍</option>
-            <option value="inactive">休職など</option>
             <option value="resigned">退職</option>
+            <option value="inactive">無効</option>
           </select>
         </div>
         <div className="field">
