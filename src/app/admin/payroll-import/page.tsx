@@ -1,7 +1,21 @@
 import { AppShell } from "@/components/AppShell";
+import { PayrollDataManagement } from "./PayrollDataManagement";
 import { PayrollImportForm } from "./PayrollImportForm";
 
-export default function PayrollImportPage() {
+type PayrollImportPageProps = {
+  searchParams?: Promise<{
+    month?: string | string[];
+  }>;
+};
+
+export default async function PayrollImportPage({
+  searchParams,
+}: PayrollImportPageProps) {
+  const params = await searchParams;
+  const requestedMonth = Array.isArray(params?.month)
+    ? params?.month[0]
+    : params?.month;
+
   return (
     <AppShell expectedRole="admin">
       <div className="page-header">
@@ -12,7 +26,10 @@ export default function PayrollImportPage() {
           管理者トップへ
         </a>
       </div>
-      <PayrollImportForm />
+      <div className="stack">
+        <PayrollImportForm />
+        <PayrollDataManagement selectedMonth={requestedMonth?.slice(0, 7)} />
+      </div>
     </AppShell>
   );
 }
