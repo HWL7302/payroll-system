@@ -16,6 +16,16 @@ export function EmployeeManagementTable({
   return (
     <div className="table-wrap">
       <table className="employee-management-table">
+        <colgroup>
+          <col />
+          <col />
+          <col />
+          <col />
+          <col />
+          <col style={{ width: "92px" }} />
+          <col style={{ width: "120px" }} />
+          <col style={{ width: "112px" }} />
+        </colgroup>
         <thead>
           <tr>
             <th>社員番号</th>
@@ -87,7 +97,7 @@ function EmployeeEditRow({ employee }: { employee: Employee }) {
           defaultValue={employee.resignation_date ?? ""}
         />
       </td>
-      <td>
+      <td style={{ whiteSpace: "nowrap" }}>
         <span className={`status-pill ${statusLabel === "退職" ? "danger" : ""}`}>
           {statusLabel}
         </span>
