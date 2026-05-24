@@ -30,13 +30,6 @@ export function EmployeeForm() {
           <label htmlFor="hire_date">入社日</label>
           <input id="hire_date" name="hire_date" type="date" />
         </div>
-        <div className="field">
-          <label htmlFor="role">権限</label>
-          <select id="role" name="role" defaultValue="employee">
-            <option value="employee">従業員</option>
-            <option value="admin">管理者</option>
-          </select>
-        </div>
       </div>
       {state.error ? <div className="error">{state.error}</div> : null}
       {state.success ? <div className="success">{state.success}</div> : null}
