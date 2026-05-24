@@ -8,13 +8,16 @@ type TaxDocumentRow = {
   tax_year: number;
   file_path: string;
   uploaded_at: string;
-  employees: {
-    employee_code: string;
-    name: string;
-  } | {
-    employee_code: string;
-    name: string;
-  }[] | null;
+  employees:
+    | {
+        employee_code: string;
+        name: string;
+      }
+    | {
+        employee_code: string;
+        name: string;
+      }[]
+    | null;
 };
 
 export default async function AdminTaxDocumentsPage() {
@@ -38,11 +41,7 @@ export default async function AdminTaxDocumentsPage() {
     <AppShell expectedRole="admin">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Admin / Tax Documents</p>
-          <h1>源泉徴収票PDF管理</h1>
-          <p className="lead">
-            従業員ごとの源泉徴収票PDFを年度別にアップロード・確認します。
-          </p>
+          <h1>源泉徴収票PDF</h1>
         </div>
         <a className="button secondary" href="/admin">
           管理者トップへ
