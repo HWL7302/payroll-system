@@ -11,12 +11,6 @@ export type EmployeeFormState = {
   success?: string;
 };
 
-const employeeStatuses = new Set<EmployeeStatus>([
-  "active",
-  "inactive",
-  "resigned",
-]);
-
 const employeeRoles = new Set<EmployeeRole>(["employee", "admin"]);
 
 export async function createEmployee(
@@ -40,8 +34,6 @@ export async function createEmployee(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const hire_date = normalizeOptionalDate(formData.get("hire_date"));
-  const resignation_date = normalizeOptionalDate(formData.get("resignation_date"));
-  const status = normalizeStatus(formData.get("status"));
   const role = normalizeRole(formData.get("role"));
 
   if (!employee_code || !name || !email) {
@@ -55,8 +47,8 @@ export async function createEmployee(
     name,
     email,
     hire_date,
-    resignation_date,
-    status,
+    resignation_date: null,
+    status: "active",
     role,
   });
 
@@ -91,7 +83,7 @@ export async function updateEmployee(
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const hire_date = normalizeOptionalDate(formData.get("hire_date"));
   const resignation_date = normalizeOptionalDate(formData.get("resignation_date"));
-  const status = normalizeStatus(formData.get("status"));
+  const status = getStatusFromResignationDate(resignation_date);
   const role = normalizeRole(formData.get("role"));
 
   if (!id || !employee_code || !name || !email) {
@@ -134,38 +126,6 @@ export async function updateEmployee(
   };
 }
 
-export async function deactivateEmployee(
-  _state: EmployeeFormState,
-  formData: FormData,
-): Promise<EmployeeFormState> {
-  const authResult = await requireAdmin();
-  const { supabase } = authResult;
-  const id = String(formData.get("id") ?? "").trim();
-
-  if (!id) {
-    return {
-      error: "対象の従業員を確認できませんでした。",
-    };
-  }
-
-  const { error } = await supabase
-    .from("employees")
-    .update({ status: "inactive" })
-    .eq("id", id);
-
-  if (error) {
-    return {
-      error: "従業員を無効化できませんでした。Supabase の権限設定を確認してください。",
-    };
-  }
-
-  revalidatePath("/admin/employees");
-
-  return {
-    success: "従業員を無効にしました。給与データは保持されています。",
-  };
-}
-
 async function requireAdmin() {
   const supabase = await createClient();
   const {
@@ -193,11 +153,21 @@ function normalizeOptionalDate(value: FormDataEntryValue | null): string | null 
   return text || null;
 }
 
-function normalizeStatus(value: FormDataEntryValue | null): EmployeeStatus {
-  const status = String(value ?? "active");
-  return employeeStatuses.has(status as EmployeeStatus)
-    ? (status as EmployeeStatus)
-    : "active";
+function getStatusFromResignationDate(resignationDate: string | null): EmployeeStatus {
+  if (!resignationDate) {
+    return "active";
+  }
+
+  return resignationDate <= getTodayDateString() ? "resigned" : "active";
+}
+
+function getTodayDateString(): string {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 function normalizeRole(value: FormDataEntryValue | null): EmployeeRole {
