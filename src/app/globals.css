@@ -276,6 +276,16 @@ h2 {
   transform: none;
 }
 
+.button.compact {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.danger-action {
+  color: var(--danger-fg);
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -443,6 +453,40 @@ tbody tr {
 
 tbody tr:hover {
   background: rgba(255, 255, 255, 0.44);
+}
+
+.employee-management-table {
+  min-width: 1120px;
+}
+
+.employee-management-table input,
+.employee-management-table select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--foreground);
+}
+
+.employee-management-table input:focus,
+.employee-management-table select:focus {
+  border-color: color-mix(in srgb, var(--primary) 58%, white);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.employee-row-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 128px;
+}
+
+.inline-message {
+  padding: 8px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .payroll-statement {
@@ -761,15 +805,16 @@ tbody tr:hover {
   }
 
   .statement-header {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(180px, 240px) 1fr 220px;
+    min-width: 1040px;
   }
 
   .statement-meta {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .statement-download {
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .statement-sections {
@@ -782,8 +827,9 @@ tbody tr:hover {
   }
 
   .statement-total {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
+    min-width: 1040px;
   }
 
   .statement-filter {
@@ -799,29 +845,38 @@ tbody tr:hover {
     font-size: 28px;
   }
 
+  .payroll-statement {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .statement-table-layout {
+    min-width: 1040px;
+  }
+
   .statement-table-section {
-    grid-template-columns: 1fr;
+    grid-template-columns: 96px 1fr;
   }
 
   .statement-table-section h3 {
-    display: block;
-    padding: 10px 12px;
-    border-right: 0;
-    border-bottom: 1px solid var(--statement-line);
-    writing-mode: horizontal-tb;
+    display: grid;
+    padding: 16px;
+    border-right: 1px solid var(--statement-line);
+    border-bottom: 0;
+    writing-mode: vertical-rl;
   }
 
   .statement-grid-table {
-    grid-template-columns: 1fr;
+    grid-template-columns: initial;
   }
 
   .statement-item-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .statement-label-cell {
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
   }
 
   .statement-value-cell {
