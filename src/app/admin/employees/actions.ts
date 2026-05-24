@@ -34,7 +34,6 @@ export async function createEmployee(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const hire_date = normalizeOptionalDate(formData.get("hire_date"));
-  const role = normalizeRole(formData.get("role"));
 
   if (!employee_code || !name || !email) {
     return {
@@ -49,7 +48,7 @@ export async function createEmployee(
     hire_date,
     resignation_date: null,
     status: "active",
-    role,
+    role: "employee",
   });
 
   if (error) {
