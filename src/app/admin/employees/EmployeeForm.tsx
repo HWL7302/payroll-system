@@ -31,18 +31,6 @@ export function EmployeeForm() {
           <input id="hire_date" name="hire_date" type="date" />
         </div>
         <div className="field">
-          <label htmlFor="resignation_date">退職日</label>
-          <input id="resignation_date" name="resignation_date" type="date" />
-        </div>
-        <div className="field">
-          <label htmlFor="status">ステータス</label>
-          <select id="status" name="status" defaultValue="active">
-            <option value="active">在籍</option>
-            <option value="resigned">退職</option>
-            <option value="inactive">無効</option>
-          </select>
-        </div>
-        <div className="field">
           <label htmlFor="role">権限</label>
           <select id="role" name="role" defaultValue="employee">
             <option value="employee">従業員</option>
