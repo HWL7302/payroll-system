@@ -19,8 +19,7 @@ export default async function AdminEmployeesPage() {
     <AppShell expectedRole="admin">
       <div className="page-header">
         <div>
-          <p className="eyebrow">株式会社HWL</p>
-          <h1>管理者トップページ</h1>
+          <h1>従業員管理</h1>
         </div>
         <a className="button secondary" href="/admin">
           管理者トップへ
