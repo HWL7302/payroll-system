@@ -2,11 +2,7 @@
 
 import { useActionState } from "react";
 import type { Employee } from "@/lib/types";
-import {
-  deactivateEmployee,
-  updateEmployee,
-  type EmployeeFormState,
-} from "./actions";
+import { updateEmployee, type EmployeeFormState } from "./actions";
 
 const initialState: EmployeeFormState = {};
 
@@ -43,25 +39,15 @@ export function EmployeeManagementTable({
 }
 
 function EmployeeEditRow({ employee }: { employee: Employee }) {
-  const [updateState, updateAction, isUpdating] = useActionState(
+  const [state, formAction, isPending] = useActionState(
     updateEmployee,
     initialState,
   );
-  const [deleteState, deleteAction, isDeleting] = useActionState(
-    deactivateEmployee,
-    initialState,
-  );
   const formId = `employee-edit-${employee.id}`;
-  const deleteFormId = `employee-delete-${employee.id}`;
-  const message =
-    updateState.error ??
-    updateState.success ??
-    deleteState.error ??
-    deleteState.success;
-  const messageClassName =
-    updateState.error || deleteState.error
-      ? "error inline-message"
-      : "success inline-message";
+  const statusLabel = getStatusLabel(employee.resignation_date);
+  const messageClassName = state.error
+    ? "error inline-message"
+    : "success inline-message";
 
   return (
     <tr>
@@ -102,11 +88,9 @@ function EmployeeEditRow({ employee }: { employee: Employee }) {
         />
       </td>
       <td>
-        <select form={formId} name="status" defaultValue={employee.status}>
-          <option value="active">在籍</option>
-          <option value="resigned">退職</option>
-          <option value="inactive">無効</option>
-        </select>
+        <span className={`status-pill ${statusLabel === "退職" ? "danger" : ""}`}>
+          {statusLabel}
+        </span>
       </td>
       <td>
         <select form={formId} name="role" defaultValue={employee.role}>
@@ -116,35 +100,34 @@ function EmployeeEditRow({ employee }: { employee: Employee }) {
       </td>
       <td>
         <div className="employee-row-actions">
-          <form action={updateAction} id={formId}>
+          <form action={formAction} id={formId}>
             <input name="id" type="hidden" value={employee.id} />
           </form>
-          <button className="button compact" form={formId} type="submit" disabled={isUpdating}>
-            {isUpdating ? "保存中" : "保存"}
+          <button className="button compact" form={formId} type="submit" disabled={isPending}>
+            {isPending ? "保存中" : "保存"}
           </button>
-          <form action={deleteAction} id={deleteFormId}>
-            <input name="id" type="hidden" value={employee.id} />
-          </form>
-          <button
-            className="button secondary compact danger-action"
-            form={deleteFormId}
-            type="submit"
-            disabled={isDeleting}
-            onClick={(event) => {
-              if (
-                !window.confirm(
-                  "この従業員を無効にします。給与データは削除されません。よろしいですか？",
-                )
-              ) {
-                event.preventDefault();
-              }
-            }}
-          >
-            {isDeleting ? "処理中" : "削除"}
-          </button>
-          {message ? <div className={messageClassName}>{message}</div> : null}
+          {state.error || state.success ? (
+            <div className={messageClassName}>{state.error ?? state.success}</div>
+          ) : null}
         </div>
       </td>
     </tr>
   );
+}
+
+function getStatusLabel(resignationDate: string | null): "在籍" | "退職" {
+  if (!resignationDate) {
+    return "在籍";
+  }
+
+  return resignationDate <= getTodayDateString() ? "退職" : "在籍";
+}
+
+function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
