@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUserRole } from "@/lib/auth";
 import {
@@ -142,11 +143,8 @@ export async function importPayrollWorkbook(
       : row;
   });
 
-  const upsertRows = rows
-    .filter(
-      (row) =>
-        (row.status === "ready" || row.status === "duplicate") && row.employeeId,
-    )
+  const insertRows = rows
+    .filter((row) => row.status === "ready" && row.employeeId)
     .map((row) => ({
       employee_id: row.employeeId!,
       payroll_month: row.payrollMonth,
@@ -185,10 +183,10 @@ export async function importPayrollWorkbook(
       net_pay: row.netPay,
     }));
 
-  if (upsertRows.length > 0) {
+  if (insertRows.length > 0) {
     const { error: insertError } = await supabase
       .from("payroll_records")
-      .upsert(upsertRows, { onConflict: "employee_id,payroll_month" });
+      .insert(insertRows);
 
     if (insertError) {
       return {
@@ -209,6 +207,9 @@ export async function importPayrollWorkbook(
           }
         : row,
     );
+
+    revalidatePath("/admin/payroll-import");
+    revalidatePath("/employee");
   }
 
   return {
@@ -239,6 +240,32 @@ export async function importPayrollWorkbook(
 
     return keys;
   }
+}
+
+export async function deletePayrollRecord(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (getUserRole(user) !== "admin") {
+    redirect("/employee");
+  }
+
+  const id = String(formData.get("id") ?? "").trim();
+
+  if (!id) {
+    return;
+  }
+
+  await supabase.from("payroll_records").delete().eq("id", id);
+
+  revalidatePath("/admin/payroll-import");
+  revalidatePath("/employee");
 }
 
 function toPayrollKey(employeeId: string, payrollMonth: string): string {
