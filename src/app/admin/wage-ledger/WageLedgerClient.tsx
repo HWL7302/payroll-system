@@ -3,6 +3,18 @@
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 
+export type WageLedgerAttendanceKey =
+  | "attendanceDays"
+  | "holidayAttendanceDays"
+  | "paidLeaveDays"
+  | "absenceDays"
+  | "lateEarlyCount"
+  | "scheduledWorkHours"
+  | "overtimeWorkHours"
+  | "holidayWorkHours"
+  | "lateNightHours"
+  | "lateEarlyHours";
+
 export type WageLedgerColumnKey =
   | "baseSalary"
   | "overtimePay"
@@ -33,6 +45,7 @@ export type WageLedgerColumn = {
 export type WageLedgerRow = {
   id: string;
   payrollMonth: string;
+  attendance: Record<WageLedgerAttendanceKey, number | null>;
   values: Record<WageLedgerColumnKey, number | null>;
 };
 
@@ -42,6 +55,11 @@ export type WageLedgerEmployeeOption = {
   name: string;
 };
 
+type WageLedgerTotals = {
+  attendance: Record<WageLedgerAttendanceKey, number>;
+  values: Record<WageLedgerColumnKey, number>;
+};
+
 type WageLedgerClientProps = {
   employees: WageLedgerEmployeeOption[];
   yearOptions: string[];
@@ -49,8 +67,55 @@ type WageLedgerClientProps = {
   selectedYear: string;
   columns: WageLedgerColumn[];
   rows: WageLedgerRow[];
-  totals: Record<WageLedgerColumnKey, number>;
+  totals: WageLedgerTotals;
 };
+
+const monthNumbers = Array.from({ length: 12 }, (_, index) => index + 1);
+
+const attendanceItems: Array<{
+  key: WageLedgerAttendanceKey;
+  label: string;
+}> = [
+  { key: "attendanceDays", label: "出勤日数" },
+  { key: "holidayAttendanceDays", label: "休日出勤日数" },
+  { key: "paidLeaveDays", label: "有給日数" },
+  { key: "absenceDays", label: "欠勤日数" },
+  { key: "lateEarlyCount", label: "遅刻・早退回数" },
+  { key: "scheduledWorkHours", label: "所定労働時間" },
+  { key: "overtimeWorkHours", label: "時間外労働時間" },
+  { key: "holidayWorkHours", label: "休日労働時間" },
+  { key: "lateNightHours", label: "深夜時間" },
+  { key: "lateEarlyHours", label: "遅刻・早退時間" },
+];
+
+const paymentKeys: WageLedgerColumnKey[] = [
+  "baseSalary",
+  "overtimePay",
+  "holidayPay",
+  "lateNightPay",
+  "taxableTransportationAllowance",
+  "nonTaxableTransportationAllowance",
+  "paymentTotal",
+];
+
+const deductionKeys: WageLedgerColumnKey[] = [
+  "healthInsurance",
+  "pensionInsurance",
+  "employmentInsurance",
+  "nursingCareInsurance",
+  "otherDeductions",
+  "incomeTax",
+  "residentTax",
+  "childCareSupport",
+  "totalDeductions",
+];
+
+const totalKeys: WageLedgerColumnKey[] = [
+  "socialInsuranceTotal",
+  "taxableAmount",
+  "netPay",
+  "bankTransferAmount",
+];
 
 export function WageLedgerClient({
   employees,
@@ -64,6 +129,11 @@ export function WageLedgerClient({
   const router = useRouter();
   const selectedEmployee = employees.find(
     (employee) => employee.id === selectedEmployeeId,
+  );
+  const columnMap = new Map(columns.map((column) => [column.key, column.label]));
+  const sections = buildSections(columnMap);
+  const rowByMonth = new Map(
+    rows.map((row) => [Number(row.payrollMonth.slice(5, 7)), row]),
   );
 
   function handleConditionChange(next: {
@@ -166,42 +236,45 @@ export function WageLedgerClient({
               WebkitOverflowScrolling: "touch",
             }}
           >
-            <table style={{ minWidth: "2600px", width: "max-content" }}>
+            <table style={ledgerTableStyle}>
               <thead>
                 <tr>
-                  <th>対象年月</th>
-                  {columns.map((column) => (
-                    <th key={column.key} style={numericCellStyle}>
-                      {column.label}
+                  <th style={sectionHeadStyle}>区分</th>
+                  <th style={itemHeadStyle}>項目</th>
+                  {monthNumbers.map((month) => (
+                    <th key={month} style={monthHeadStyle}>
+                      {month}月分
                     </th>
                   ))}
+                  <th style={monthHeadStyle}>合計</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{formatPayrollMonthLabel(row.payrollMonth)}</td>
-                    {columns.map((column) => (
-                      <td key={column.key} style={numericCellStyle}>
-                        {formatAmount(row.values[column.key])}
+                {sections.map((section) =>
+                  section.items.map((item, itemIndex) => (
+                    <tr key={`${section.title}-${item.label}`}>
+                      {itemIndex === 0 ? (
+                        <th rowSpan={section.items.length} style={sectionCellStyle}>
+                          {section.title}
+                        </th>
+                      ) : null}
+                      <th style={itemCellStyle}>{item.label}</th>
+                      {monthNumbers.map((month) => {
+                        const row = rowByMonth.get(month);
+
+                        return (
+                          <td key={month} style={valueCellStyle}>
+                            {formatAmount(getItemValue(row, item))}
+                          </td>
+                        );
+                      })}
+                      <td style={totalCellStyle}>
+                        {formatAmount(getTotalValue(totals, item))}
                       </td>
-                    ))}
-                  </tr>
-                ))}
+                    </tr>
+                  )),
+                )}
               </tbody>
-              <tfoot>
-                <tr>
-                  <td style={totalCellStyle}>合計</td>
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      style={{ ...numericCellStyle, ...totalCellStyle }}
-                    >
-                      {formatAmount(totals[column.key])}
-                    </td>
-                  ))}
-                </tr>
-              </tfoot>
             </table>
           </div>
         )}
@@ -210,12 +283,124 @@ export function WageLedgerClient({
   );
 }
 
-const numericCellStyle = {
+type LedgerItem =
+  | {
+      kind: "attendance";
+      key: WageLedgerAttendanceKey;
+      label: string;
+    }
+  | {
+      kind: "amount";
+      key: WageLedgerColumnKey;
+      label: string;
+    };
+
+type LedgerSection = {
+  title: string;
+  items: LedgerItem[];
+};
+
+function buildSections(columnMap: Map<WageLedgerColumnKey, string>): LedgerSection[] {
+  return [
+    {
+      title: "勤怠項目",
+      items: attendanceItems.map((item) => ({
+        kind: "attendance",
+        ...item,
+      })),
+    },
+    {
+      title: "支給項目",
+      items: paymentKeys.map((key) => ({
+        kind: "amount",
+        key,
+        label: columnMap.get(key) ?? key,
+      })),
+    },
+    {
+      title: "控除項目",
+      items: deductionKeys.map((key) => ({
+        kind: "amount",
+        key,
+        label: columnMap.get(key) ?? key,
+      })),
+    },
+    {
+      title: "合計",
+      items: totalKeys.map((key) => ({
+        kind: "amount",
+        key,
+        label: columnMap.get(key) ?? key,
+      })),
+    },
+  ];
+}
+
+function getItemValue(
+  row: WageLedgerRow | undefined,
+  item: LedgerItem,
+): number | null | undefined {
+  if (!row) {
+    return null;
+  }
+
+  return item.kind === "attendance"
+    ? row.attendance[item.key]
+    : row.values[item.key];
+}
+
+function getTotalValue(totals: WageLedgerTotals, item: LedgerItem): number {
+  return item.kind === "attendance"
+    ? totals.attendance[item.key]
+    : totals.values[item.key];
+}
+
+const ledgerTableStyle = {
+  minWidth: 1480,
+  width: "max-content",
+  borderCollapse: "collapse",
+  background: "rgba(255, 255, 255, 0.62)",
+} satisfies CSSProperties;
+
+const sectionHeadStyle = {
+  width: 92,
+  textAlign: "center",
+} satisfies CSSProperties;
+
+const itemHeadStyle = {
+  width: 180,
+  textAlign: "center",
+} satisfies CSSProperties;
+
+const monthHeadStyle = {
+  minWidth: 88,
+  textAlign: "center",
+  whiteSpace: "nowrap",
+} satisfies CSSProperties;
+
+const sectionCellStyle = {
+  borderRight: "1px solid var(--line)",
+  background: "var(--section-bg)",
+  textAlign: "center",
+  verticalAlign: "middle",
+  fontWeight: 800,
+} satisfies CSSProperties;
+
+const itemCellStyle = {
+  borderRight: "1px solid var(--line)",
+  background: "rgba(255, 255, 255, 0.54)",
+  fontWeight: 800,
+  whiteSpace: "nowrap",
+} satisfies CSSProperties;
+
+const valueCellStyle = {
+  minWidth: 88,
   textAlign: "right",
   whiteSpace: "nowrap",
 } satisfies CSSProperties;
 
 const totalCellStyle = {
+  ...valueCellStyle,
   background: "#f8fafc",
   fontWeight: 800,
 } satisfies CSSProperties;
@@ -232,7 +417,7 @@ function buildCsv({
   ]);
   const totalRow = [
     "合計",
-    ...columns.map((column) => formatCsvNumber(totals[column.key])),
+    ...columns.map((column) => formatCsvNumber(totals.values[column.key])),
   ];
 
   return [header, ...body, totalRow]
@@ -249,7 +434,7 @@ function formatCsvNumber(value: number | null | undefined): string {
 }
 
 function formatAmount(value: number | null | undefined): string {
-  if (value === null || value === undefined) {
+  if (value === null || value === undefined || value === 0) {
     return "";
   }
 
