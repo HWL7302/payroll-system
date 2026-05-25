@@ -3,6 +3,18 @@
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 
+export type PayrollSummaryAttendanceKey =
+  | "attendanceDays"
+  | "holidayAttendanceDays"
+  | "paidLeaveDays"
+  | "absenceDays"
+  | "lateEarlyCount"
+  | "scheduledWorkHours"
+  | "overtimeWorkHours"
+  | "holidayWorkHours"
+  | "lateNightHours"
+  | "lateEarlyHours";
+
 export type PayrollSummaryColumnKey =
   | "baseSalary"
   | "overtimePay"
@@ -34,7 +46,13 @@ export type PayrollSummaryRow = {
   id: string;
   employeeCode: string;
   employeeName: string;
+  attendance: Record<PayrollSummaryAttendanceKey, number | null>;
   values: Record<PayrollSummaryColumnKey, number | null>;
+};
+
+type PayrollSummaryTotals = {
+  attendance: Record<PayrollSummaryAttendanceKey, number>;
+  values: Record<PayrollSummaryColumnKey, number>;
 };
 
 type PayrollSummaryClientProps = {
@@ -45,8 +63,53 @@ type PayrollSummaryClientProps = {
   selectedMonth: string;
   columns: PayrollSummaryColumn[];
   rows: PayrollSummaryRow[];
-  totals: Record<PayrollSummaryColumnKey, number>;
+  totals: PayrollSummaryTotals;
 };
+
+const attendanceItems: Array<{
+  key: PayrollSummaryAttendanceKey;
+  label: string;
+}> = [
+  { key: "attendanceDays", label: "出勤日数" },
+  { key: "holidayAttendanceDays", label: "休日出勤日数" },
+  { key: "paidLeaveDays", label: "有給日数" },
+  { key: "absenceDays", label: "欠勤日数" },
+  { key: "lateEarlyCount", label: "遅刻・早退回数" },
+  { key: "scheduledWorkHours", label: "所定労働時間" },
+  { key: "overtimeWorkHours", label: "時間外労働時間" },
+  { key: "holidayWorkHours", label: "休日労働時間" },
+  { key: "lateNightHours", label: "深夜時間" },
+  { key: "lateEarlyHours", label: "遅刻・早退時間" },
+];
+
+const paymentKeys: PayrollSummaryColumnKey[] = [
+  "baseSalary",
+  "overtimePay",
+  "holidayPay",
+  "lateNightPay",
+  "taxableTransportationAllowance",
+  "nonTaxableTransportationAllowance",
+  "paymentTotal",
+];
+
+const deductionKeys: PayrollSummaryColumnKey[] = [
+  "healthInsurance",
+  "pensionInsurance",
+  "employmentInsurance",
+  "nursingCareInsurance",
+  "otherDeductions",
+  "incomeTax",
+  "residentTax",
+  "childCareSupport",
+  "totalDeductions",
+];
+
+const totalKeys: PayrollSummaryColumnKey[] = [
+  "socialInsuranceTotal",
+  "taxableAmount",
+  "netPay",
+  "bankTransferAmount",
+];
 
 export function PayrollSummaryClient({
   monthOptions,
@@ -56,6 +119,8 @@ export function PayrollSummaryClient({
   totals,
 }: PayrollSummaryClientProps) {
   const router = useRouter();
+  const columnMap = new Map(columns.map((column) => [column.key, column.label]));
+  const sections = buildSections(columnMap);
 
   function handleMonthChange(month: string) {
     router.push(`/admin/payroll-summary?month=${encodeURIComponent(month)}`);
@@ -120,54 +185,37 @@ export function PayrollSummaryClient({
         ) : rows.length === 0 ? (
           <p>選択した対象年月の給与データはありません。</p>
         ) : (
-          <div
-            className="table-wrap"
-            style={{
-              maxWidth: "100%",
-              overflowX: "auto",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            <table style={{ minWidth: "2600px", width: "max-content" }}>
-              <thead>
-                <tr>
-                  <th>社員番号</th>
-                  <th>氏名</th>
-                  {columns.map((column) => (
-                    <th key={column.key} style={numericCellStyle}>
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.employeeCode}</td>
-                    <td>{row.employeeName}</td>
-                    {columns.map((column) => (
-                      <td key={column.key} style={numericCellStyle}>
-                        {formatAmount(row.values[column.key])}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td style={totalCellStyle}>合計</td>
-                  <td style={totalCellStyle}>{rows.length}名</td>
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      style={{ ...numericCellStyle, ...totalCellStyle }}
-                    >
-                      {formatAmount(totals[column.key])}
-                    </td>
-                  ))}
-                </tr>
-              </tfoot>
-            </table>
+          <div className="stack">
+            {rows.map((row) => (
+              <article key={row.id} style={summaryCardStyle}>
+                <div style={summaryCardHeaderStyle}>
+                  <strong>{row.employeeCode}</strong>
+                  <span>{row.employeeName}</span>
+                </div>
+                <ReportTable
+                  sections={sections}
+                  getValue={(item) =>
+                    item.kind === "attendance"
+                      ? row.attendance[item.key]
+                      : row.values[item.key]
+                  }
+                />
+              </article>
+            ))}
+            <article style={summaryCardStyle}>
+              <div style={summaryCardHeaderStyle}>
+                <strong>会社合計</strong>
+                <span>{rows.length}名</span>
+              </div>
+              <ReportTable
+                sections={sections}
+                getValue={(item) =>
+                  item.kind === "attendance"
+                    ? totals.attendance[item.key]
+                    : totals.values[item.key]
+                }
+              />
+            </article>
           </div>
         )}
       </section>
@@ -175,14 +223,136 @@ export function PayrollSummaryClient({
   );
 }
 
-const numericCellStyle = {
-  textAlign: "right",
-  whiteSpace: "nowrap",
+type ReportItem =
+  | {
+      kind: "attendance";
+      key: PayrollSummaryAttendanceKey;
+      label: string;
+    }
+  | {
+      kind: "amount";
+      key: PayrollSummaryColumnKey;
+      label: string;
+    };
+
+type ReportSection = {
+  title: string;
+  items: ReportItem[];
+};
+
+function ReportTable({
+  sections,
+  getValue,
+}: {
+  sections: ReportSection[];
+  getValue: (item: ReportItem) => number | null | undefined;
+}) {
+  return (
+    <div style={{ maxWidth: "100%", overflowX: "auto" }}>
+      <table style={reportTableStyle}>
+        <tbody>
+          {sections.map((section) =>
+            section.items.map((item, itemIndex) => (
+              <tr key={`${section.title}-${item.label}`}>
+                {itemIndex === 0 ? (
+                  <th rowSpan={section.items.length} style={sectionCellStyle}>
+                    {section.title}
+                  </th>
+                ) : null}
+                <th style={itemCellStyle}>{item.label}</th>
+                <td style={valueCellStyle}>{formatAmount(getValue(item))}</td>
+              </tr>
+            )),
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function buildSections(columnMap: Map<PayrollSummaryColumnKey, string>): ReportSection[] {
+  return [
+    {
+      title: "勤怠項目",
+      items: attendanceItems.map((item) => ({
+        kind: "attendance",
+        ...item,
+      })),
+    },
+    {
+      title: "支給項目",
+      items: paymentKeys.map((key) => ({
+        kind: "amount",
+        key,
+        label: columnMap.get(key) ?? key,
+      })),
+    },
+    {
+      title: "控除項目",
+      items: deductionKeys.map((key) => ({
+        kind: "amount",
+        key,
+        label: columnMap.get(key) ?? key,
+      })),
+    },
+    {
+      title: "合計",
+      items: totalKeys.map((key) => ({
+        kind: "amount",
+        key,
+        label: columnMap.get(key) ?? key,
+      })),
+    },
+  ];
+}
+
+const summaryCardStyle = {
+  overflow: "hidden",
+  border: "1px solid var(--line)",
+  borderRadius: 8,
+  background: "rgba(255, 255, 255, 0.52)",
 } satisfies CSSProperties;
 
-const totalCellStyle = {
-  background: "#f8fafc",
+const summaryCardHeaderStyle = {
+  display: "flex",
+  gap: 16,
+  alignItems: "center",
+  padding: "12px 16px",
+  borderBottom: "1px solid var(--line)",
+  background: "var(--table-head-gradient)",
   fontWeight: 800,
+} satisfies CSSProperties;
+
+const reportTableStyle = {
+  width: "100%",
+  minWidth: 560,
+  borderCollapse: "collapse",
+  background: "rgba(255, 255, 255, 0.62)",
+} satisfies CSSProperties;
+
+const sectionCellStyle = {
+  width: 96,
+  borderRight: "1px solid var(--line)",
+  borderBottom: "1px solid var(--line)",
+  background: "var(--section-bg)",
+  textAlign: "center",
+  verticalAlign: "middle",
+  fontWeight: 800,
+} satisfies CSSProperties;
+
+const itemCellStyle = {
+  width: "48%",
+  borderRight: "1px solid var(--line)",
+  borderBottom: "1px solid var(--line)",
+  background: "rgba(255, 255, 255, 0.54)",
+  fontWeight: 800,
+} satisfies CSSProperties;
+
+const valueCellStyle = {
+  borderBottom: "1px solid var(--line)",
+  textAlign: "right",
+  whiteSpace: "nowrap",
+  fontWeight: 700,
 } satisfies CSSProperties;
 
 function buildCsv({
@@ -199,7 +369,7 @@ function buildCsv({
   const totalRow = [
     "合計",
     `${rows.length}名`,
-    ...columns.map((column) => formatCsvNumber(totals[column.key])),
+    ...columns.map((column) => formatCsvNumber(totals.values[column.key])),
   ];
 
   return [header, ...body, totalRow]
@@ -216,7 +386,7 @@ function formatCsvNumber(value: number | null | undefined): string {
 }
 
 function formatAmount(value: number | null | undefined): string {
-  if (value === null || value === undefined) {
+  if (value === null || value === undefined || value === 0) {
     return "";
   }
 
