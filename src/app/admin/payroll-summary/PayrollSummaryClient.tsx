@@ -120,8 +120,15 @@ export function PayrollSummaryClient({
         ) : rows.length === 0 ? (
           <p>選択した対象年月の給与データはありません。</p>
         ) : (
-          <div className="table-wrap">
-            <table style={{ minWidth: "2200px" }}>
+          <div
+            className="table-wrap"
+            style={{
+              maxWidth: "100%",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            <table style={{ minWidth: "2600px", width: "max-content" }}>
               <thead>
                 <tr>
                   <th>社員番号</th>
