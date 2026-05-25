@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Employee, PayrollRecord } from "@/lib/types";
 import {
   WageLedgerClient,
+  type WageLedgerAttendanceKey,
   type WageLedgerColumn,
   type WageLedgerColumnKey,
   type WageLedgerEmployeeOption,
@@ -177,6 +178,18 @@ function buildLedgerRows(records: PayrollRecord[]): WageLedgerRow[] {
   return records.map((record) => ({
     id: record.id,
     payrollMonth: record.payroll_month,
+    attendance: {
+      attendanceDays: record.attendance_days,
+      holidayAttendanceDays: record.holiday_attendance_days,
+      paidLeaveDays: record.paid_leave_days,
+      absenceDays: record.absence_days,
+      lateEarlyCount: record.late_early_count,
+      scheduledWorkHours: record.scheduled_work_hours,
+      overtimeWorkHours: record.overtime_work_hours,
+      holidayWorkHours: record.holiday_work_hours,
+      lateNightHours: record.late_night_hours,
+      lateEarlyHours: record.late_early_hours,
+    },
     values: {
       baseSalary: record.base_salary,
       overtimePay: record.overtime_pay,
@@ -204,16 +217,45 @@ function buildLedgerRows(records: PayrollRecord[]): WageLedgerRow[] {
   }));
 }
 
-function buildTotals(rows: WageLedgerRow[]): Record<WageLedgerColumnKey, number> {
-  return ledgerColumns.reduce(
-    (totals, column) => {
-      totals[column.key] = rows.reduce(
-        (total, row) => total + (row.values[column.key] ?? 0),
-        0,
-      );
+function buildTotals(rows: WageLedgerRow[]): {
+  attendance: Record<WageLedgerAttendanceKey, number>;
+  values: Record<WageLedgerColumnKey, number>;
+} {
+  const attendanceKeys: WageLedgerAttendanceKey[] = [
+    "attendanceDays",
+    "holidayAttendanceDays",
+    "paidLeaveDays",
+    "absenceDays",
+    "lateEarlyCount",
+    "scheduledWorkHours",
+    "overtimeWorkHours",
+    "holidayWorkHours",
+    "lateNightHours",
+    "lateEarlyHours",
+  ];
 
-      return totals;
-    },
-    {} as Record<WageLedgerColumnKey, number>,
-  );
+  return {
+    attendance: attendanceKeys.reduce(
+      (totals, key) => {
+        totals[key] = rows.reduce(
+          (total, row) => total + (row.attendance[key] ?? 0),
+          0,
+        );
+
+        return totals;
+      },
+      {} as Record<WageLedgerAttendanceKey, number>,
+    ),
+    values: ledgerColumns.reduce(
+      (totals, column) => {
+        totals[column.key] = rows.reduce(
+          (total, row) => total + (row.values[column.key] ?? 0),
+          0,
+        );
+
+        return totals;
+      },
+      {} as Record<WageLedgerColumnKey, number>,
+    ),
+  };
 }
