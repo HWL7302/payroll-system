@@ -32,6 +32,13 @@ export default function AdminPage() {
           </a>
         </section>
         <section className="panel">
+          <h2>賃金台帳</h2>
+          <p>従業員ごとの年度別給与記録を一覧・集計し、CSVで出力できます。</p>
+          <a className="button" href="/admin/wage-ledger">
+            賃金台帳へ
+          </a>
+        </section>
+        <section className="panel">
           <h2>源泉徴収票PDF</h2>
           <p>従業員ごとの源泉徴収票PDFを年度別に管理します。</p>
           <a className="button" href="/admin/tax-documents">
