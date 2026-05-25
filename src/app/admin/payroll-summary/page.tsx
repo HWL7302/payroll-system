@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Employee, PayrollRecord } from "@/lib/types";
 import {
   PayrollSummaryClient,
+  type PayrollSummaryAttendanceKey,
   type PayrollSummaryColumn,
   type PayrollSummaryColumnKey,
   type PayrollSummaryRow,
@@ -144,6 +145,18 @@ function buildSummaryRows(
         id: record.id,
         employeeCode: employee?.employee_code ?? "",
         employeeName: employee?.name ?? "",
+        attendance: {
+          attendanceDays: record.attendance_days,
+          holidayAttendanceDays: record.holiday_attendance_days,
+          paidLeaveDays: record.paid_leave_days,
+          absenceDays: record.absence_days,
+          lateEarlyCount: record.late_early_count,
+          scheduledWorkHours: record.scheduled_work_hours,
+          overtimeWorkHours: record.overtime_work_hours,
+          holidayWorkHours: record.holiday_work_hours,
+          lateNightHours: record.late_night_hours,
+          lateEarlyHours: record.late_early_hours,
+        },
         values: {
           baseSalary: record.base_salary,
           overtimePay: record.overtime_pay,
@@ -177,18 +190,47 @@ function buildSummaryRows(
 
 function buildTotals(
   rows: PayrollSummaryRow[],
-): Record<PayrollSummaryColumnKey, number> {
-  return summaryColumns.reduce(
-    (totals, column) => {
-      totals[column.key] = rows.reduce(
-        (total, row) => total + (row.values[column.key] ?? 0),
-        0,
-      );
+): {
+  attendance: Record<PayrollSummaryAttendanceKey, number>;
+  values: Record<PayrollSummaryColumnKey, number>;
+} {
+  const attendanceKeys: PayrollSummaryAttendanceKey[] = [
+    "attendanceDays",
+    "holidayAttendanceDays",
+    "paidLeaveDays",
+    "absenceDays",
+    "lateEarlyCount",
+    "scheduledWorkHours",
+    "overtimeWorkHours",
+    "holidayWorkHours",
+    "lateNightHours",
+    "lateEarlyHours",
+  ];
 
-      return totals;
-    },
-    {} as Record<PayrollSummaryColumnKey, number>,
-  );
+  return {
+    attendance: attendanceKeys.reduce(
+      (totals, key) => {
+        totals[key] = rows.reduce(
+          (total, row) => total + (row.attendance[key] ?? 0),
+          0,
+        );
+
+        return totals;
+      },
+      {} as Record<PayrollSummaryAttendanceKey, number>,
+    ),
+    values: summaryColumns.reduce(
+      (totals, column) => {
+        totals[column.key] = rows.reduce(
+          (total, row) => total + (row.values[column.key] ?? 0),
+          0,
+        );
+
+        return totals;
+      },
+      {} as Record<PayrollSummaryColumnKey, number>,
+    ),
+  };
 }
 
 function buildMonthOptions(months: string[]) {
