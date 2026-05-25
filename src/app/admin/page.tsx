@@ -25,6 +25,13 @@ export default function AdminPage() {
           </a>
         </section>
         <section className="panel">
+          <h2>給与集計表</h2>
+          <p>対象年月ごとの給与データを一覧・集計し、CSVで出力できます。</p>
+          <a className="button" href="/admin/payroll-summary">
+            給与集計表へ
+          </a>
+        </section>
+        <section className="panel">
           <h2>源泉徴収票PDF</h2>
           <p>従業員ごとの源泉徴収票PDFを年度別に管理します。</p>
           <a className="button" href="/admin/tax-documents">
