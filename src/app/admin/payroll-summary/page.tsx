@@ -82,11 +82,7 @@ export default async function PayrollSummaryPage({
     <AppShell expectedRole="admin">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Admin / Payroll Summary</p>
           <h1>給与集計表</h1>
-          <p className="lead">
-            対象年月ごとに全従業員の給与データを一覧・集計します。
-          </p>
         </div>
         <a className="button secondary" href="/admin">
           管理者トップへ
