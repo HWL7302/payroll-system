@@ -109,9 +109,6 @@ export function PayrollSummaryClient({
             >
               CSVダウンロード
             </button>
-            <button className="button secondary" type="button" disabled>
-              Excelダウンロード
-            </button>
           </div>
         </div>
       </section>
