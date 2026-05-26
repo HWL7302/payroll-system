@@ -224,7 +224,7 @@ export function WageLedgerClient(props: WageLedgerClientProps) {
                       {month}月分
                     </th>
                   ))}
-                  <th style={monthHeadStyle}>合計</th>
+                  <th style={ledgerTotalHeadStyle}>合計</th>
                 </tr>
               </thead>
               <tbody>
@@ -303,6 +303,11 @@ const monthHeadStyle = {
   textAlign: "center",
   whiteSpace: "nowrap",
 } satisfies CSSProperties;
+const ledgerTotalHeadStyle = {
+  ...monthHeadStyle,
+  background: "rgba(238, 242, 248, 0.9)",
+  borderLeft: "2px solid var(--line)",
+} satisfies CSSProperties;
 const sectionCellStyle = {
   borderRight: "1px solid var(--line)",
   background: "var(--section-bg)",
@@ -324,6 +329,7 @@ const valueCellStyle = {
 const totalCellStyle = {
   ...valueCellStyle,
   background: "#f8fafc",
+  borderLeft: "2px solid var(--line)",
   fontWeight: 800,
 } satisfies CSSProperties;
 
