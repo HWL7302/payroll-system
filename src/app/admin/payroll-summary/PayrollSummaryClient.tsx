@@ -37,11 +37,7 @@ export type PayrollSummaryColumnKey =
   | "netPay"
   | "bankTransferAmount";
 
-export type PayrollSummaryColumn = {
-  key: PayrollSummaryColumnKey;
-  label: string;
-};
-
+export type PayrollSummaryColumn = { key: PayrollSummaryColumnKey; label: string };
 export type PayrollSummaryRow = {
   id: string;
   employeeCode: string;
@@ -56,32 +52,29 @@ type PayrollSummaryTotals = {
 };
 
 type PayrollSummaryClientProps = {
-  monthOptions: Array<{
-    value: string;
-    label: string;
-  }>;
+  monthOptions: Array<{ value: string; label: string }>;
   selectedMonth: string;
   columns: PayrollSummaryColumn[];
   rows: PayrollSummaryRow[];
   totals: PayrollSummaryTotals;
 };
 
-const attendanceItems: Array<{
-  key: PayrollSummaryAttendanceKey;
-  label: string;
-}> = [
-  { key: "attendanceDays", label: "出勤日数" },
-  { key: "holidayAttendanceDays", label: "休日出勤日数" },
-  { key: "paidLeaveDays", label: "有給日数" },
-  { key: "absenceDays", label: "欠勤日数" },
-  { key: "lateEarlyCount", label: "遅刻・早退回数" },
-  { key: "scheduledWorkHours", label: "所定労働時間" },
-  { key: "overtimeWorkHours", label: "時間外労働時間" },
-  { key: "holidayWorkHours", label: "休日労働時間" },
-  { key: "lateNightHours", label: "深夜時間" },
-  { key: "lateEarlyHours", label: "遅刻・早退時間" },
-];
+type SummaryItem =
+  | { kind: "attendance"; key: PayrollSummaryAttendanceKey; label: string }
+  | { kind: "amount"; key: PayrollSummaryColumnKey; label: string };
 
+const attendanceItems: SummaryItem[] = [
+  ["attendanceDays", "出勤日数"],
+  ["holidayAttendanceDays", "休日出勤日数"],
+  ["paidLeaveDays", "有給日数"],
+  ["absenceDays", "欠勤日数"],
+  ["lateEarlyCount", "遅刻・早退回数"],
+  ["scheduledWorkHours", "所定労働時間"],
+  ["overtimeWorkHours", "時間外労働時間"],
+  ["holidayWorkHours", "休日労働時間"],
+  ["lateNightHours", "深夜時間"],
+  ["lateEarlyHours", "遅刻・早退時間"],
+].map(([key, label]) => ({ kind: "attendance", key, label }) as SummaryItem);
 const paymentKeys: PayrollSummaryColumnKey[] = [
   "baseSalary",
   "overtimePay",
@@ -91,7 +84,6 @@ const paymentKeys: PayrollSummaryColumnKey[] = [
   "nonTaxableTransportationAllowance",
   "paymentTotal",
 ];
-
 const deductionKeys: PayrollSummaryColumnKey[] = [
   "healthInsurance",
   "pensionInsurance",
@@ -103,7 +95,6 @@ const deductionKeys: PayrollSummaryColumnKey[] = [
   "childCareSupport",
   "totalDeductions",
 ];
-
 const totalKeys: PayrollSummaryColumnKey[] = [
   "socialInsuranceTotal",
   "taxableAmount",
@@ -111,30 +102,24 @@ const totalKeys: PayrollSummaryColumnKey[] = [
   "bankTransferAmount",
 ];
 
-export function PayrollSummaryClient({
-  monthOptions,
-  selectedMonth,
-  columns,
-  rows,
-  totals,
-}: PayrollSummaryClientProps) {
+export function PayrollSummaryClient(props: PayrollSummaryClientProps) {
+  const { monthOptions, selectedMonth, columns, rows, totals } = props;
   const router = useRouter();
-  const columnMap = new Map(columns.map((column) => [column.key, column.label]));
-  const sections = buildSections(columnMap);
+  const labels = new Map(columns.map((column) => [column.key, column.label]));
+  const sections = [
+    section("支給項目", paymentKeys, labels),
+    section("控除項目", deductionKeys, labels),
+    section("合計", totalKeys, labels),
+    { title: "勤怠項目", items: attendanceItems },
+  ];
 
   function handleMonthChange(month: string) {
     router.push(`/admin/payroll-summary?month=${encodeURIComponent(month)}`);
   }
 
   function handleDownloadCsv() {
-    const csv = buildCsv({
-      columns,
-      rows,
-      totals,
-    });
-    const blob = new Blob([`\ufeff${csv}`], {
-      type: "text/csv;charset=utf-8",
-    });
+    const csv = buildCsv({ rows, totals, sections });
+    const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
 
@@ -165,16 +150,14 @@ export function PayrollSummaryClient({
               ))}
             </select>
           </label>
-          <div className="summary-row" style={{ justifyContent: "flex-end", margin: 0 }}>
-            <button
-              className="button"
-              type="button"
-              onClick={handleDownloadCsv}
-              disabled={rows.length === 0}
-            >
-              CSVダウンロード
-            </button>
-          </div>
+          <button
+            className="button"
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={rows.length === 0}
+          >
+            CSVダウンロード
+          </button>
         </div>
       </section>
 
@@ -185,37 +168,41 @@ export function PayrollSummaryClient({
         ) : rows.length === 0 ? (
           <p>選択した対象年月の給与データはありません。</p>
         ) : (
-          <div className="stack">
-            {rows.map((row) => (
-              <article key={row.id} style={summaryCardStyle}>
-                <div style={summaryCardHeaderStyle}>
-                  <strong>{row.employeeCode}</strong>
-                  <span>{row.employeeName}</span>
-                </div>
-                <ReportTable
-                  sections={sections}
-                  getValue={(item) =>
-                    item.kind === "attendance"
-                      ? row.attendance[item.key]
-                      : row.values[item.key]
-                  }
-                />
-              </article>
-            ))}
-            <article style={summaryCardStyle}>
-              <div style={summaryCardHeaderStyle}>
-                <strong>会社合計</strong>
-                <span>{rows.length}名</span>
-              </div>
-              <ReportTable
-                sections={sections}
-                getValue={(item) =>
-                  item.kind === "attendance"
-                    ? totals.attendance[item.key]
-                    : totals.values[item.key]
-                }
-              />
-            </article>
+          <div className="table-wrap" style={scrollStyle}>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={sectionHeadStyle}>区分</th>
+                  <th style={itemHeadStyle}>項目</th>
+                  {rows.map((row) => (
+                    <th key={row.id} style={employeeHeadStyle}>
+                      {row.employeeName || row.employeeCode}
+                    </th>
+                  ))}
+                  <th style={totalHeadStyle}>合計</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sections.map((group) =>
+                  group.items.map((item, index) => (
+                    <tr key={`${group.title}-${item.label}`}>
+                      {index === 0 ? (
+                        <th rowSpan={group.items.length} style={sectionCellStyle}>
+                          {group.title}
+                        </th>
+                      ) : null}
+                      <th style={itemCellStyle}>{item.label}</th>
+                      {rows.map((row) => (
+                        <td key={row.id} style={valueCellStyle}>
+                          {formatAmount(valueFor(row, item))}
+                        </td>
+                      ))}
+                      <td style={totalCellStyle}>{formatAmount(totalFor(totals, item))}</td>
+                    </tr>
+                  )),
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
@@ -223,156 +210,96 @@ export function PayrollSummaryClient({
   );
 }
 
-type ReportItem =
-  | {
-      kind: "attendance";
-      key: PayrollSummaryAttendanceKey;
-      label: string;
-    }
-  | {
-      kind: "amount";
-      key: PayrollSummaryColumnKey;
-      label: string;
-    };
-
-type ReportSection = {
-  title: string;
-  items: ReportItem[];
-};
-
-function ReportTable({
-  sections,
-  getValue,
-}: {
-  sections: ReportSection[];
-  getValue: (item: ReportItem) => number | null | undefined;
-}) {
-  return (
-    <div style={{ maxWidth: "100%", overflowX: "auto" }}>
-      <table style={reportTableStyle}>
-        <tbody>
-          {sections.map((section) =>
-            section.items.map((item, itemIndex) => (
-              <tr key={`${section.title}-${item.label}`}>
-                {itemIndex === 0 ? (
-                  <th rowSpan={section.items.length} style={sectionCellStyle}>
-                    {section.title}
-                  </th>
-                ) : null}
-                <th style={itemCellStyle}>{item.label}</th>
-                <td style={valueCellStyle}>{formatAmount(getValue(item))}</td>
-              </tr>
-            )),
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+function section(
+  title: string,
+  keys: PayrollSummaryColumnKey[],
+  labels: Map<PayrollSummaryColumnKey, string>,
+) {
+  return {
+    title,
+    items: keys.map((key) => ({
+      kind: "amount" as const,
+      key,
+      label: labels.get(key) ?? key,
+    })),
+  };
 }
 
-function buildSections(columnMap: Map<PayrollSummaryColumnKey, string>): ReportSection[] {
-  return [
-    {
-      title: "勤怠項目",
-      items: attendanceItems.map((item) => ({
-        kind: "attendance",
-        ...item,
-      })),
-    },
-    {
-      title: "支給項目",
-      items: paymentKeys.map((key) => ({
-        kind: "amount",
-        key,
-        label: columnMap.get(key) ?? key,
-      })),
-    },
-    {
-      title: "控除項目",
-      items: deductionKeys.map((key) => ({
-        kind: "amount",
-        key,
-        label: columnMap.get(key) ?? key,
-      })),
-    },
-    {
-      title: "合計",
-      items: totalKeys.map((key) => ({
-        kind: "amount",
-        key,
-        label: columnMap.get(key) ?? key,
-      })),
-    },
-  ];
+function valueFor(row: PayrollSummaryRow, item: SummaryItem) {
+  return item.kind === "attendance" ? row.attendance[item.key] : row.values[item.key];
 }
 
-const summaryCardStyle = {
-  overflow: "hidden",
-  border: "1px solid var(--line)",
-  borderRadius: 8,
-  background: "rgba(255, 255, 255, 0.52)",
-} satisfies CSSProperties;
+function totalFor(totals: PayrollSummaryTotals, item: SummaryItem) {
+  return item.kind === "attendance" ? totals.attendance[item.key] : totals.values[item.key];
+}
 
-const summaryCardHeaderStyle = {
-  display: "flex",
-  gap: 16,
-  alignItems: "center",
-  padding: "12px 16px",
-  borderBottom: "1px solid var(--line)",
-  background: "var(--table-head-gradient)",
-  fontWeight: 800,
+const scrollStyle = {
+  maxWidth: "100%",
+  overflowX: "auto",
+  WebkitOverflowScrolling: "touch",
 } satisfies CSSProperties;
-
-const reportTableStyle = {
-  width: "100%",
-  minWidth: 560,
+const tableStyle = {
+  minWidth: 760,
+  width: "max-content",
   borderCollapse: "collapse",
   background: "rgba(255, 255, 255, 0.62)",
 } satisfies CSSProperties;
-
+const sectionHeadStyle = { width: 92, textAlign: "center" } satisfies CSSProperties;
+const itemHeadStyle = { width: 180, textAlign: "center" } satisfies CSSProperties;
+const employeeHeadStyle = {
+  minWidth: 120,
+  textAlign: "center",
+  whiteSpace: "nowrap",
+} satisfies CSSProperties;
+const totalHeadStyle = {
+  ...employeeHeadStyle,
+  background: "rgba(238, 242, 248, 0.9)",
+  borderLeft: "2px solid var(--line)",
+} satisfies CSSProperties;
 const sectionCellStyle = {
-  width: 96,
   borderRight: "1px solid var(--line)",
-  borderBottom: "1px solid var(--line)",
   background: "var(--section-bg)",
   textAlign: "center",
   verticalAlign: "middle",
   fontWeight: 800,
 } satisfies CSSProperties;
-
 const itemCellStyle = {
-  width: "48%",
   borderRight: "1px solid var(--line)",
-  borderBottom: "1px solid var(--line)",
   background: "rgba(255, 255, 255, 0.54)",
+  fontWeight: 800,
+  whiteSpace: "nowrap",
+} satisfies CSSProperties;
+const valueCellStyle = {
+  minWidth: 120,
+  textAlign: "right",
+  whiteSpace: "nowrap",
+} satisfies CSSProperties;
+const totalCellStyle = {
+  ...valueCellStyle,
+  background: "rgba(248, 250, 252, 0.95)",
+  borderLeft: "2px solid var(--line)",
   fontWeight: 800,
 } satisfies CSSProperties;
 
-const valueCellStyle = {
-  borderBottom: "1px solid var(--line)",
-  textAlign: "right",
-  whiteSpace: "nowrap",
-  fontWeight: 700,
-} satisfies CSSProperties;
-
 function buildCsv({
-  columns,
   rows,
   totals,
-}: Pick<PayrollSummaryClientProps, "columns" | "rows" | "totals">): string {
-  const header = ["社員番号", "氏名", ...columns.map((column) => column.label)];
-  const body = rows.map((row) => [
-    row.employeeCode,
-    row.employeeName,
-    ...columns.map((column) => formatCsvNumber(row.values[column.key])),
-  ]);
-  const totalRow = [
-    "合計",
-    `${rows.length}名`,
-    ...columns.map((column) => formatCsvNumber(totals.values[column.key])),
-  ];
+  sections,
+}: {
+  rows: PayrollSummaryRow[];
+  totals: PayrollSummaryTotals;
+  sections: Array<{ title: string; items: SummaryItem[] }>;
+}): string {
+  const header = ["項目名", ...rows.map((row) => row.employeeName || row.employeeCode), "合計"];
+  const body = sections.flatMap((group) =>
+    group.items.map((item) => [
+      item.label,
+      ...rows.map((row) => formatCsvNumber(valueFor(row, item))),
+      formatCsvNumber(totalFor(totals, item)),
+    ]),
+  );
 
-  return [header, ...body, totalRow]
+  return [header, ...body]
     .map((line) => line.map(escapeCsvValue).join(","))
     .join("\r\n");
 }
@@ -386,11 +313,6 @@ function formatCsvNumber(value: number | null | undefined): string {
 }
 
 function formatAmount(value: number | null | undefined): string {
-  if (value === null || value === undefined || value === 0) {
-    return "";
-  }
-
-  return new Intl.NumberFormat("ja-JP", {
-    maximumFractionDigits: 0,
-  }).format(value);
+  if (value === null || value === undefined || value === 0) return "";
+  return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 }).format(value);
 }
