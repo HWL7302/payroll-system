@@ -10,6 +10,11 @@ export type TaxDocumentUploadState = {
   success?: string;
 };
 
+export type TaxDocumentDeleteState = {
+  error?: string;
+  success?: string;
+};
+
 const TAX_DOCUMENT_BUCKET = "tax-documents";
 
 export async function uploadTaxDocument(
@@ -17,17 +22,7 @@ export async function uploadTaxDocument(
   formData: FormData,
 ): Promise<TaxDocumentUploadState> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  if (getUserRole(user) !== "admin") {
-    redirect("/employee");
-  }
+  await ensureAdmin(supabase);
 
   const employeeId = String(formData.get("employee_id") ?? "");
   const yearValue = String(formData.get("tax_year") ?? "");
@@ -60,6 +55,19 @@ export async function uploadTaxDocument(
     return { error: "選択した従業員を確認できませんでした。" };
   }
 
+  const { data: existingDocument, error: existingError } = await supabase
+    .from("tax_documents")
+    .select("id, file_path")
+    .eq("employee_id", employeeId)
+    .eq("tax_year", taxYear)
+    .maybeSingle();
+
+  if (existingError) {
+    return {
+      error: `既存の源泉徴収票情報を確認できませんでした。${formatSupabaseError(existingError)}`,
+    };
+  }
+
   const filePath = `${employeeId}/${taxYear}/withholding-slip.pdf`;
   const { error: uploadError } = await supabase.storage
     .from(TAX_DOCUMENT_BUCKET)
@@ -75,34 +83,26 @@ export async function uploadTaxDocument(
   }
 
   const uploadedAt = new Date().toISOString();
-  const documentPayload = {
-    employee_id: employeeId,
-    tax_year: taxYear,
-    file_path: filePath,
-    uploaded_at: uploadedAt,
-  };
-  const { count: updatedCount, error: updateError } = await supabase
-    .from("tax_documents")
-    .update(documentPayload, { count: "exact" })
-    .eq("employee_id", employeeId)
-    .eq("tax_year", taxYear);
+  const { error: upsertError } = await supabase.from("tax_documents").upsert(
+    {
+      employee_id: employeeId,
+      tax_year: taxYear,
+      file_path: filePath,
+      uploaded_at: uploadedAt,
+    },
+    { onConflict: "employee_id,tax_year" },
+  );
 
-  if (updateError) {
+  if (upsertError) {
+    await supabase.storage.from(TAX_DOCUMENT_BUCKET).remove([filePath]);
+
     return {
-      error: `アップロード情報を更新できませんでした。${formatSupabaseError(updateError)}`,
+      error: `アップロード情報を保存できませんでした。${formatSupabaseError(upsertError)}`,
     };
   }
 
-  if ((updatedCount ?? 0) === 0) {
-    const { error: insertError } = await supabase
-      .from("tax_documents")
-      .insert(documentPayload);
-
-    if (insertError) {
-      return {
-        error: `アップロード情報を保存できませんでした。${formatSupabaseError(insertError)}`,
-      };
-    }
+  if (existingDocument?.file_path && existingDocument.file_path !== filePath) {
+    await supabase.storage.from(TAX_DOCUMENT_BUCKET).remove([existingDocument.file_path]);
   }
 
   revalidatePath("/admin/tax-documents");
@@ -111,6 +111,89 @@ export async function uploadTaxDocument(
   return {
     success: `${employee.employee_code} ${employee.name} / ${taxYear}年 の源泉徴収票PDFを保存しました。`,
   };
+}
+
+export async function deleteTaxDocument(
+  _state: TaxDocumentDeleteState,
+  formData: FormData,
+): Promise<TaxDocumentDeleteState> {
+  const supabase = await createClient();
+  await ensureAdmin(supabase);
+
+  const documentId = String(formData.get("document_id") ?? "");
+
+  if (!documentId) {
+    return { error: "削除する源泉徴収票を確認できませんでした。" };
+  }
+
+  const { data: document, error: documentError } = await supabase
+    .from("tax_documents")
+    .select("id, tax_year, file_path, employees(employee_code, name)")
+    .eq("id", documentId)
+    .maybeSingle();
+
+  if (documentError || !document) {
+    return { error: "削除する源泉徴収票を確認できませんでした。" };
+  }
+
+  if (document.file_path) {
+    const { error: storageError } = await supabase.storage
+      .from(TAX_DOCUMENT_BUCKET)
+      .remove([document.file_path]);
+
+    if (storageError) {
+      return {
+        error: `Storage上のPDFを削除できませんでした。${formatSupabaseError(storageError)}`,
+      };
+    }
+  }
+
+  const { error: deleteError } = await supabase
+    .from("tax_documents")
+    .delete()
+    .eq("id", documentId);
+
+  if (deleteError) {
+    return {
+      error: `源泉徴収票のDBレコードを削除できませんでした。${formatSupabaseError(deleteError)}`,
+    };
+  }
+
+  revalidatePath("/admin/tax-documents");
+  revalidatePath("/employee/tax-documents");
+
+  const employee = getEmployee(document);
+
+  return {
+    success: `${employee?.employee_code ?? ""} ${employee?.name ?? ""} / ${
+      document.tax_year
+    }年 の源泉徴収票PDFを削除しました。`,
+  };
+}
+
+async function ensureAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (getUserRole(user) !== "admin") {
+    redirect("/employee");
+  }
+}
+
+function getEmployee(document: {
+  employees:
+    | { employee_code: string; name: string }
+    | { employee_code: string; name: string }[]
+    | null;
+}) {
+  return Array.isArray(document.employees)
+    ? (document.employees[0] ?? null)
+    : document.employees;
 }
 
 function formatSupabaseError(error: { code?: string; message?: string }): string {
