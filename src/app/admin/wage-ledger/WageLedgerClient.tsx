@@ -305,8 +305,6 @@ const monthHeadStyle = {
 } satisfies CSSProperties;
 const ledgerTotalHeadStyle = {
   ...monthHeadStyle,
-  background: "rgba(238, 242, 248, 0.9)",
-  borderLeft: "2px solid var(--line)",
 } satisfies CSSProperties;
 const sectionCellStyle = {
   borderRight: "1px solid var(--line)",
