@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   downloadTaxDocument,
   type TaxDocumentDownloadState,
@@ -17,6 +18,7 @@ export function TaxDocumentDownloadButton({
   documentId,
   disabled = false,
 }: TaxDocumentDownloadButtonProps) {
+  const router = useRouter();
   const [state, formAction, isPending] = useActionState(
     downloadTaxDocument,
     initialState,
@@ -24,9 +26,10 @@ export function TaxDocumentDownloadButton({
 
   useEffect(() => {
     if (state.downloadUrl) {
+      router.refresh();
       window.location.href = state.downloadUrl;
     }
-  }, [state.downloadUrl]);
+  }, [router, state.downloadUrl]);
 
   return (
     <form action={formAction} style={{ display: "grid", gap: 8 }}>
