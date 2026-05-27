@@ -61,6 +61,7 @@ export type TaxDocument = {
   tax_year: number;
   file_path: string;
   uploaded_at: string;
+  downloaded_at: string | null;
   created_at: string;
   updated_at: string;
 };
