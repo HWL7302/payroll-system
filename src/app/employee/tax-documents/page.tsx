@@ -2,18 +2,30 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import type { Employee, TaxDocument } from "@/lib/types";
+import { TaxDocumentDownloadButton } from "./TaxDocumentDownloadButton";
 
 type TaxDocumentsPageProps = {
   searchParams?: Promise<{
     year?: string | string[];
+    preview?: string | string[];
   }>;
 };
 
-type TaxDocumentWithDownload = TaxDocument & {
-  downloadUrl: string | null;
+type TaxDocumentWithUrls = TaxDocument & {
+  previewUrl: string | null;
 };
 
 const TAX_DOCUMENT_BUCKET = "tax-documents";
+
+const badgeBaseStyle = {
+  display: "inline-flex",
+  minHeight: 28,
+  alignItems: "center",
+  borderRadius: 999,
+  padding: "0 12px",
+  fontSize: 13,
+  fontWeight: 700,
+} as const;
 
 export default async function TaxDocumentsPage({
   searchParams,
@@ -22,6 +34,10 @@ export default async function TaxDocumentsPage({
   const requestedYear = Array.isArray(params?.year)
     ? params?.year[0]
     : params?.year;
+  const previewValue = Array.isArray(params?.preview)
+    ? params?.preview[0]
+    : params?.preview;
+  const shouldPreview = previewValue === "1";
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,24 +54,22 @@ export default async function TaxDocumentsPage({
       "id, employee_code, name, email, hire_date, resignation_date, status, role, auth_user_id, created_at, updated_at",
     )
     .ilike("email", authEmail)
-    .maybeSingle();
+    .maybeSingle<Employee>();
 
   const documentsResult = employee
     ? await fetchTaxDocuments(supabase, employee.id)
     : { data: [], error: null };
-  const documents = (documentsResult.data ?? []) as TaxDocument[];
+  const documents = documentsResult.data ?? [];
   const yearOptions = buildYearOptions(documents);
   const selectedYear = chooseSelectedYear(yearOptions, requestedYear);
-  const selectedDocument = documents.find(
-    (document) => String(document.tax_year) === selectedYear,
-  );
-  const documentsWithDownload = await buildDocumentsWithDownloadUrls(
+  const documentsWithUrls = await buildDocumentsWithPreviewUrls(
     supabase,
     documents,
   );
-  const selectedDocumentWithDownload =
-    documentsWithDownload.find((document) => document.id === selectedDocument?.id) ??
-    null;
+  const selectedDocument =
+    documentsWithUrls.find(
+      (document) => String(document.tax_year) === selectedYear,
+    ) ?? null;
 
   return (
     <AppShell expectedRole="employee">
@@ -99,6 +113,7 @@ export default async function TaxDocumentsPage({
                   ))}
                 </select>
               </label>
+              <input type="hidden" name="preview" value="1" />
               <button className="button secondary" type="submit">
                 表示
               </button>
@@ -109,25 +124,35 @@ export default async function TaxDocumentsPage({
                 <p className="eyebrow">Tax Documents</p>
                 <h2>源泉徴収票ダウンロード</h2>
                 <p>
-                  {selectedDocumentWithDownload?.downloadUrl
-                    ? `${selectedYear}年の源泉徴収票PDFをダウンロードできます。`
+                  {selectedDocument?.previewUrl
+                    ? shouldPreview
+                      ? `${selectedYear}年の源泉徴収票PDFを表示中です。`
+                      : `${selectedYear}年の源泉徴収票PDFは登録済みです。表示ボタンで内容を確認できます。`
                     : `${selectedYear}年の源泉徴収票PDFはまだ登録されていません。`}
                 </p>
               </div>
-              {selectedDocumentWithDownload?.downloadUrl ? (
-                <a
-                  className="button"
-                  href={selectedDocumentWithDownload.downloadUrl}
-                  download
-                >
-                  源泉徴収票ダウンロード
-                </a>
-              ) : (
-                <button className="button secondary" type="button" disabled>
-                  準備中
-                </button>
-              )}
+              <TaxDocumentDownloadButton
+                documentId={selectedDocument?.id ?? null}
+                disabled={!shouldPreview || !selectedDocument?.previewUrl}
+              />
             </section>
+
+            {shouldPreview && selectedDocument?.previewUrl ? (
+              <section className="panel">
+                <h2>PDFプレビュー</h2>
+                <iframe
+                  src={selectedDocument.previewUrl}
+                  title={`${selectedYear}年 源泉徴収票PDFプレビュー`}
+                  style={{
+                    width: "100%",
+                    minHeight: 720,
+                    border: "1px solid var(--line)",
+                    borderRadius: 8,
+                    background: "#ffffff",
+                  }}
+                />
+              </section>
+            ) : null}
 
             <section className="panel">
               <h2>源泉徴収票一覧</h2>
@@ -143,25 +168,24 @@ export default async function TaxDocumentsPage({
                   </thead>
                   <tbody>
                     {yearOptions.map((year) => {
-                      const document = documentsWithDownload.find(
+                      const document = documentsWithUrls.find(
                         (item) => String(item.tax_year) === year,
                       );
+                      const isUploaded = Boolean(document?.previewUrl);
+                      const isDownloaded = Boolean(document?.downloaded_at);
 
                       return (
                         <tr key={year}>
                           <td>{year}年</td>
                           <td>源泉徴収票</td>
-                          <td>{document?.downloadUrl ? "登録済み" : "準備中"}</td>
                           <td>
-                            {document?.downloadUrl ? (
-                              <a className="button secondary" href={document.downloadUrl} download>
-                                ダウンロード
-                              </a>
-                            ) : (
-                              <button className="button secondary" type="button" disabled>
-                                未対応
-                              </button>
-                            )}
+                            <StatusBadge uploaded={isUploaded} />
+                          </td>
+                          <td>
+                            <DownloadStatusBadge
+                              uploaded={isUploaded}
+                              downloaded={isDownloaded}
+                            />
                           </td>
                         </tr>
                       );
@@ -177,13 +201,59 @@ export default async function TaxDocumentsPage({
   );
 }
 
+function StatusBadge({ uploaded }: { uploaded: boolean }) {
+  return (
+    <span
+      style={{
+        ...badgeBaseStyle,
+        color: uploaded ? "#027a48" : "#b54708",
+        background: uploaded ? "var(--success-bg)" : "#fff7e6",
+      }}
+    >
+      {uploaded ? "登録済み" : "準備中"}
+    </span>
+  );
+}
+
+function DownloadStatusBadge({
+  uploaded,
+  downloaded,
+}: {
+  uploaded: boolean;
+  downloaded: boolean;
+}) {
+  const label = !uploaded
+    ? "未対応"
+    : downloaded
+      ? "ダウンロード済み"
+      : "未ダウンロード";
+
+  return (
+    <span
+      style={{
+        ...badgeBaseStyle,
+        color: !uploaded ? "#667085" : downloaded ? "#027a48" : "#b54708",
+        background: !uploaded
+          ? "#eef2f8"
+          : downloaded
+            ? "var(--success-bg)"
+            : "#fff7e6",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
 async function fetchTaxDocuments(
   supabase: Awaited<ReturnType<typeof createClient>>,
   employeeId: Employee["id"],
 ) {
   return supabase
     .from("tax_documents")
-    .select("id, employee_id, tax_year, file_path, uploaded_at, created_at, updated_at")
+    .select(
+      "id, employee_id, tax_year, file_path, uploaded_at, downloaded_at, created_at, updated_at",
+    )
     .eq("employee_id", employeeId)
     .not("tax_year", "is", null)
     .not("file_path", "is", null)
@@ -191,22 +261,20 @@ async function fetchTaxDocuments(
     .returns<TaxDocument[]>();
 }
 
-async function buildDocumentsWithDownloadUrls(
+async function buildDocumentsWithPreviewUrls(
   supabase: Awaited<ReturnType<typeof createClient>>,
   documents: TaxDocument[],
-): Promise<TaxDocumentWithDownload[]> {
-  const documentsWithUrls: TaxDocumentWithDownload[] = [];
+): Promise<TaxDocumentWithUrls[]> {
+  const documentsWithUrls: TaxDocumentWithUrls[] = [];
 
   for (const document of documents) {
     const { data } = await supabase.storage
       .from(TAX_DOCUMENT_BUCKET)
-      .createSignedUrl(document.file_path, 300, {
-        download: `源泉徴収票_${document.tax_year}.pdf`,
-      });
+      .createSignedUrl(document.file_path, 300);
 
     documentsWithUrls.push({
       ...document,
-      downloadUrl: data?.signedUrl ?? null,
+      previewUrl: data?.signedUrl ?? null,
     });
   }
 
