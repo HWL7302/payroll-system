@@ -128,6 +128,7 @@ create table if not exists public.tax_documents (
   tax_year integer not null,
   file_path text not null,
   uploaded_at timestamptz not null default now(),
+  downloaded_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (employee_id, tax_year)
@@ -136,7 +137,8 @@ create table if not exists public.tax_documents (
 alter table public.tax_documents
   add column if not exists tax_year integer,
   add column if not exists file_path text,
-  add column if not exists uploaded_at timestamptz not null default now();
+  add column if not exists uploaded_at timestamptz not null default now(),
+  add column if not exists downloaded_at timestamptz;
 
 alter table public.tax_documents
   add column if not exists year integer,
@@ -256,6 +258,31 @@ using (
       and (employees.auth_user_id = auth.uid() or lower(employees.email) = lower(coalesce(auth.jwt() ->> 'email', '')))
   )
 );
+
+create or replace function public.mark_tax_document_downloaded(document_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.tax_documents
+  set downloaded_at = now()
+  where id = document_id
+    and exists (
+      select 1
+      from public.employees
+      where employees.id = tax_documents.employee_id
+        and (employees.auth_user_id = auth.uid() or lower(employees.email) = lower(coalesce(auth.jwt() ->> 'email', '')))
+    );
+
+  if not found then
+    raise exception 'Tax document not found or access denied';
+  end if;
+end;
+$$;
+
+grant execute on function public.mark_tax_document_downloaded(uuid) to authenticated;
 
 drop policy if exists "Admins can manage tax document files" on storage.objects;
 create policy "Admins can manage tax document files"
