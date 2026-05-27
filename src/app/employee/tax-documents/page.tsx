@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import type { Employee, TaxDocument } from "@/lib/types";
 import { TaxDocumentDownloadButton } from "./TaxDocumentDownloadButton";
+import { TaxDocumentPdfPreview } from "./TaxDocumentPdfPreview";
 
 type TaxDocumentsPageProps = {
   searchParams?: Promise<{
@@ -140,16 +141,9 @@ export default async function TaxDocumentsPage({
             {shouldPreview && selectedDocument?.previewUrl ? (
               <section className="panel">
                 <h2>PDFプレビュー</h2>
-                <iframe
-                  src={selectedDocument.previewUrl}
+                <TaxDocumentPdfPreview
+                  previewUrl={selectedDocument.previewUrl}
                   title={`${selectedYear}年 源泉徴収票PDFプレビュー`}
-                  style={{
-                    width: "100%",
-                    minHeight: 720,
-                    border: "1px solid var(--line)",
-                    borderRadius: 8,
-                    background: "#ffffff",
-                  }}
                 />
               </section>
             ) : null}
