@@ -169,7 +169,15 @@ export function PayrollSummaryClient(props: PayrollSummaryClientProps) {
           <p>選択した対象年月の給与データはありません。</p>
         ) : (
           <div className="table-wrap" style={scrollStyle}>
-            <table style={tableStyle}>
+            <table style={getTableStyle(rows.length)}>
+              <colgroup>
+                <col style={sectionColStyle} />
+                <col style={itemColStyle} />
+                {rows.map((row) => (
+                  <col key={row.id} style={getEmployeeColStyle(rows.length)} />
+                ))}
+                <col style={totalColStyle} />
+              </colgroup>
               <thead>
                 <tr>
                   <th style={sectionHeadStyle}>区分</th>
@@ -240,21 +248,24 @@ const scrollStyle = {
 } satisfies CSSProperties;
 const tableStyle = {
   minWidth: 760,
-  width: "max-content",
+  width: "100%",
   borderCollapse: "collapse",
   background: "rgba(255, 255, 255, 0.62)",
 } satisfies CSSProperties;
+const sectionColStyle = { width: 92 } satisfies CSSProperties;
+const itemColStyle = { width: 180 } satisfies CSSProperties;
+const totalColStyle = { width: 120 } satisfies CSSProperties;
 const sectionHeadStyle = { width: 92, textAlign: "center" } satisfies CSSProperties;
 const itemHeadStyle = { width: 180, textAlign: "center" } satisfies CSSProperties;
 const employeeHeadStyle = {
   minWidth: 120,
+  borderLeft: "1px solid var(--line)",
   textAlign: "center",
   whiteSpace: "nowrap",
 } satisfies CSSProperties;
 const totalHeadStyle = {
   ...employeeHeadStyle,
-  background: "rgba(238, 242, 248, 0.9)",
-  borderLeft: "2px solid var(--line)",
+  borderLeft: "1px solid var(--line)",
 } satisfies CSSProperties;
 const sectionCellStyle = {
   borderRight: "1px solid var(--line)",
@@ -271,15 +282,36 @@ const itemCellStyle = {
 } satisfies CSSProperties;
 const valueCellStyle = {
   minWidth: 120,
+  borderLeft: "1px solid var(--line)",
   textAlign: "right",
   whiteSpace: "nowrap",
 } satisfies CSSProperties;
 const totalCellStyle = {
   ...valueCellStyle,
   background: "rgba(248, 250, 252, 0.95)",
-  borderLeft: "2px solid var(--line)",
+  borderLeft: "1px solid var(--line)",
   fontWeight: 800,
 } satisfies CSSProperties;
+
+function getTableStyle(employeeCount: number): CSSProperties {
+  if (employeeCount >= 6) {
+    return {
+      ...tableStyle,
+      minWidth: 92 + 180 + employeeCount * 120 + 120,
+      width: "max-content",
+    };
+  }
+
+  return tableStyle;
+}
+
+function getEmployeeColStyle(employeeCount: number): CSSProperties {
+  if (employeeCount >= 6) {
+    return { width: 120 };
+  }
+
+  return { width: `${100 / Math.max(employeeCount, 1)}%` };
+}
 
 function buildCsv({
   rows,
