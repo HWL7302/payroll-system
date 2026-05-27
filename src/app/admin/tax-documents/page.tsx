@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
+import { TaxDocumentDeleteButton } from "./TaxDocumentDeleteButton";
 import { TaxDocumentUploadForm } from "./TaxDocumentUploadForm";
 
 type TaxDocumentRow = {
@@ -78,18 +79,29 @@ export default async function AdminTaxDocumentsPage() {
                     <th>氏名</th>
                     <th>Storage path</th>
                     <th>アップロード日時</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {documents.map((document) => (
-                    <tr key={document.id}>
-                      <td>{document.tax_year}年</td>
-                      <td>{getEmployee(document)?.employee_code ?? "-"}</td>
-                      <td>{getEmployee(document)?.name ?? "-"}</td>
-                      <td>{document.file_path}</td>
-                      <td>{formatDateTime(document.uploaded_at)}</td>
-                    </tr>
-                  ))}
+                  {documents.map((document) => {
+                    const employee = getEmployee(document);
+                    const label = `${employee?.employee_code ?? "-"} ${
+                      employee?.name ?? "-"
+                    } / ${document.tax_year}年`;
+
+                    return (
+                      <tr key={document.id}>
+                        <td>{document.tax_year}年</td>
+                        <td>{employee?.employee_code ?? "-"}</td>
+                        <td>{employee?.name ?? "-"}</td>
+                        <td>{document.file_path}</td>
+                        <td>{formatDateTime(document.uploaded_at)}</td>
+                        <td>
+                          <TaxDocumentDeleteButton documentId={document.id} label={label} />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
