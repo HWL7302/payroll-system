@@ -6,10 +6,7 @@ export const metadata: Metadata = {
   title: "給与閲覧システム",
   description: "給与明細を安全に閲覧するための社内システム",
   icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "192x192" },
-    ],
+    icon: [{ url: "/icon.png", type: "image/png", sizes: "192x192" }],
     apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
   },
 };
